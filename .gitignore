@@ -172,3 +172,30 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignore datasets
+DATASET/
+Dataset_eld/
+*.csv
+*.json
+*.zip
+*.tar
+
+# Ignore trained model weights
+*.pth
+*.pt
+*.onnx
+*.h5
+
+# Ignore result images and outputs
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+mobilenet_feature_vectors.csv
+mobilenet_feature_clusters.png
+
+# Ignore logs
+*.log
+logs/
