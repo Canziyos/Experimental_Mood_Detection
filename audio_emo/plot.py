@@ -1,32 +1,36 @@
-import matplotlib.pyplot as plt
 import pandas as pd
+import librosa
+import librosa.display
+import matplotlib.pyplot as plt
 
-def plot_physio_signals(data, mood_label="Mood"):
-    # Plot Heart Rate
-    plt.figure(figsize=(10, 4))
-    plt.plot(data["heart_rate"], label="HR", color="steelblue")
-    plt.title(f"Heart Rate Over Time ({mood_label})")
-    plt.xlabel("Time step")
-    plt.ylabel("Heart Rate (bpm)")
-    plt.grid(True)
+# Visualize waveform and MFCC for a sample file
+def visualize_sample(audio_path):
+    y, sr = librosa.load(audio_path, sr=None)
+    plt.figure(figsize=(10, 3))
+    librosa.display.waveshow(y, sr=sr)
+    plt.title("Waveform")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
     plt.tight_layout()
     plt.show()
 
-    # Plot GSR
+    mfcc = librosa.feature.mfcc(y=y, sr=sr)
     plt.figure(figsize=(10, 4))
-    plt.plot(data["gsr"], label="GSR", color="darkorange")
-    plt.title(f"GSR Over Time ({mood_label})")
-    plt.xlabel("Time step")
-    plt.ylabel("Skin Conductance (µS)")
-    plt.grid(True)
+    librosa.display.specshow(mfcc, x_axis='time')
+    plt.colorbar()
+    plt.title("MFCC (13 Coefficients)")
     plt.tight_layout()
     plt.show()
 
-calm = pd.read_csv("../simulated_data/calm.csv")
-plot_physio_signals(calm, "Calm")
-
-agitated = pd.read_csv("../simulated_data/agitated.csv")
-plot_physio_signals(agitated, "Agitated")
-
-depressed = pd.read_csv("../simulated_data/depressed.csv")
-plot_physio_signals(depressed, "Depressed")
+# Visualize emotion distribution
+def visualize_distribution(metadata_path="metadata.csv"):
+    df = pd.read_csv(metadata_path)
+    counts = df["emotion"].value_counts()
+    plt.figure(figsize=(8, 4))
+    counts.plot(kind='bar', color='skyblue')
+    plt.title("Number of Samples per Emotion")
+    plt.xlabel("Emotion")
+    plt.ylabel("Count")
+    plt.grid(axis='y')
+    plt.tight_layout()
+    plt.show()
