@@ -6,8 +6,9 @@ import csv
 from glob import glob
 
 # --------- CONFIGURATION ---------
-test_dir = "../Dataset_eld/train"  # Path to test images
-model_path = "resnet18_final.pth"  # Path to trained ResNet18 model
+#test_dir = "H:\\Experimental_Mood_Detection\\data\\Dataset_eld\\train"
+test_dir = "H:\\Experimental_Mood_Detection\\data\\Dataset\\test" 
+model_path = "resnet18_final.pth"
 num_classes = 7
 class_names = ["1", "2", "3", "4", "5", "6", "7"]
 save_csv = True
@@ -35,6 +36,8 @@ model.eval()
 
 # --------- PREDICTION LOOP ---------
 all_images = glob(os.path.join(test_dir, "*", "*.jpg"))
+if not os.path.exists(test_dir):
+    raise FileNotFoundError(f"Test directory not found: {test_dir}")
 correct = 0
 total = 0
 results = []

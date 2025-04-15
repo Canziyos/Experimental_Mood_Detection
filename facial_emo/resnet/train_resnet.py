@@ -8,10 +8,10 @@ import os
 
 def main():
     # ----------- CONFIGURATION -----------
-    dataset_path = "../DATASET/train"
+    dataset_path = "H:/Experimental_Mood_Detection/data/DATASET/train"
     num_classes = len(os.listdir(dataset_path))
     batch_size = 8
-    num_epochs = 3
+    num_epochs = 25
     learning_rate = 1e-4
     # -------------------------------------
 
