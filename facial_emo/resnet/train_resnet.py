@@ -78,7 +78,7 @@ def main():
     torch.save(model.state_dict(), "resnet18_final.pth")
     print("Final model saved to resnet18_final.pth")
 
-# Fix for multiprocessing on Windows
+# For multiprocessing on Windows
 if __name__ == '__main__':
     torch.multiprocessing.freeze_support()
     main()

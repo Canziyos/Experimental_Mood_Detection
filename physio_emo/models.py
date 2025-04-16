@@ -10,4 +10,4 @@ class MoodMLP(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-        return self.fc2(x)  # raw logits, softmax later during loss
+        return self.fc2(x)  # raw logits, softmax later during loss.

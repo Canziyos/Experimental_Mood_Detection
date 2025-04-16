@@ -17,7 +17,7 @@ encoder = LabelEncoder()
 y_np = encoder.fit_transform(shuffled["label"])
 y = torch.tensor(y_np, dtype=torch.long)
 
-# ✅ Compute class weights using NumPy
+# Compute class weights using NumPy
 class_weights = compute_class_weight(class_weight="balanced", classes=np.array([0, 1, 2]), y=y_np)
 weight_tensor = torch.tensor(class_weights, dtype=torch.float32)
 

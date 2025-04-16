@@ -24,6 +24,6 @@ for i in range(len(df)):
     except Exception as e:
         print(f"Skipping image {img_path}: {e}")
 
-# Save filtered elderly dataset
+# Save filtered elderly.
 elderly = pd.DataFrame(elderly_rows)
 elderly.to_csv("train_elder.csv", index=False)
