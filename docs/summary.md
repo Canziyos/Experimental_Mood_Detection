@@ -142,14 +142,6 @@ Combining two or more of the above sensor types.
 - Requires more complex dataset design and annotation.
 
 ---
-Excellent. Let's dive into **point 2: Fusion Strategies in Emotion Recognition**.
-
----
-Noted, commander 😏. I’ll keep the thinking lightweight but the style sharp.
-
-Here’s the rewritten **fusion strategies summary**, now styled properly:
-
----
 
 ### Fusion Strategies in Emotion Recognition
 
