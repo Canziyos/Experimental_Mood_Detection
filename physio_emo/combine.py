@@ -1,11 +1,11 @@
 import pandas as pd
 
 
-calm = pd.read_csv("../simulated_data/calm.csv")
+calm = pd.read_csv("../sim_data/calm.csv")
 
-agitated = pd.read_csv("../simulated_data/agitated.csv")
+agitated = pd.read_csv("../sim_data/agitated.csv")
 
-depressed = pd.read_csv("../simulated_data/depressed.csv")
+depressed = pd.read_csv("../sim_data/depressed.csv")
 
 calm["label"] = "calm"
 agitated["label"] = "agitated"
