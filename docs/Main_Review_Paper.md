@@ -228,10 +228,6 @@ Common in real-world systems, especially where sensors operate independently.
 
 ---
 
-Great. Let's look at **point 5: Datasets** as described in the reviewed article.
-
----
-
 ### Point 5: Datasets for Emotion Recognition
 
 The article categorizes datasets based on the **sensor modality** they support. It covers a wide selection, which is crucial because emotion recognition systems are heavily dependent on **data diversity**, **labeling quality**, and **sensor synchronization**.
