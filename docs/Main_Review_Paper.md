@@ -2,8 +2,6 @@
 
 Emotion models structure how we represent, detect, and classify emotions. The reviewed article compares two main families of models.
 
----
-
 #### 1. Discrete Emotion Models
 
 These models assume that emotions can be broken into a finite set of basic categories. This view is rooted in evolutionary psychology.
@@ -26,14 +24,13 @@ These models assume that emotions can be broken into a finite set of basic categ
 
 Very useful for classification tasks such as facial expression recognition, but oversimplified in human psychology terms.
 
-**As presented in the article:**
+**In the article:**
 - Based on evolutionary theory (Darwin, Ekman).
 - Emotions are treated as primitive reactions with fixed categories.
 - Emphasizes Ekman's criteria (e.g., rapid onset, short duration, universal expression).
 - Highlights Plutchik’s model for its layered emotional structure and intensity levels.
 - Favored by the authors in applications involving facial expressions or speech, especially when using labeled datasets.
 
----
 
 #### 2. Dimensional Emotion Models
 
@@ -58,7 +55,7 @@ These models represent emotions as coordinates in a continuous emotional space, 
  
 Ideal for modeling emotion dynamics in video, audio, or physiological data streams.
 
-**As presented in the article:**
+**In the article:**
 - Described as more flexible than discrete models.
 - Focuses on Valence-Arousal (2D) and PAD (3D) models.
 - Notes that anger and fear can share similar coordinates in 2D, which make them difficult to distinguish.
@@ -78,11 +75,9 @@ This statement appears inconsistent. It is arguably the discrete models that are
 
 Sensors used in emotion recognition are categorized into five main groups:
 
----
-
 #### **1. Visual Sensors**
 Primarily **cameras** used for:
-- **Facial Expression Recognition (FER)**
+- **(FER)**
 - **Remote Photoplethysmography (rPPG)** — (using RGB cameras to detect subtle changes in skin color due to blood flow).
 
 **Pros:**
@@ -96,10 +91,9 @@ Primarily **cameras** used for:
 - Faces can be manipulated.
 - High inter-subject variability (skin color, facial structure).
 
----
 
 #### **2. Audio Sensors**
-These involve **microphones** used in **Speech Emotion Recognition (SER)**.
+Microphones** used in **(SER)**.
 
 **Pros:**
 - Low cost and widely available.
@@ -110,7 +104,6 @@ These involve **microphones** used in **Speech Emotion Recognition (SER)**.
 - Language- and culture-dependent.
 - Emotions like "neutral" or "bored" can be hard to distinguish from others.
 
----
 
 #### **3. Radar Sensors**
 These use **radio-frequency (RF) signals** to detect physiological changes like:
@@ -127,13 +120,12 @@ These use **radio-frequency (RF) signals** to detect physiological changes like:
 - Noise interference in cluttered or dynamic environments.
 - Less explored compared to visual/audio options.
 
----
 
 #### **4. Other Physiological Sensors**
 wearables or direct-contact sensors such as:
-- Electroencephalography **(EEG)** -brain activity.  
-- Electrocardiography **(ECG)** -heart activity.  
-- Electromyography **(EMG)** -muscle activation. 
+- Electroencephalography **(EEG)** -brain.  
+- Electrocardiography **(ECG)** -heart.  
+- Electromyography **(EMG)** -muscle. 
 - Galvanic Skin Response **(GSR)** -sweat level  
 - Blood Volume Pulse **(BVP)**  
 - Electrooculography **(EOG)** -eye movements  
@@ -147,7 +139,6 @@ wearables or direct-contact sensors such as:
 - Might introduce bias (wearing sensors may affect the subject’s emotional state).
 - Often less acceptable for use in daily-life applications.
 
----
 
 #### **5. Multi-Sensor Fusion**
 Combining two or more of the above sensor types.
@@ -165,9 +156,7 @@ Combining two or more of the above sensor types.
 
 ### Fusion Strategies in Emotion Recognition
 
-The reviewed paper identifies three common levels of fusion.
-
----
+Three common levels of fusion.
 
 #### **1. Pixel-level fusion**
 
@@ -186,8 +175,6 @@ This strategy merges raw input data from different sensors before any feature ex
 
 Rarely used in practice except for naturally aligned signals (e.g., RGB-D video).
 
----
-
 #### **2. Feature-level fusion**
 
 Features are first extracted separately from each sensor, then concatenated into one vector before classification.
@@ -205,7 +192,6 @@ Features are first extracted separately from each sensor, then concatenated into
 
 Most popular in academic research due to its flexibility and performance.
 
----
 
 #### **3. Decision-level fusion**
 
@@ -228,13 +214,11 @@ Common in real-world systems, especially where sensors operate independently.
 
 ### Point 5: Datasets for Emotion Recognition
 
-The article categorizes datasets based on the **sensor modality** they support. It covers a wide selection, which is crucial because emotion recognition systems are heavily dependent on **data diversity**, **labeling quality**, and **sensor synchronization**.
-
----
+The article categorizes datasets based on the **sensor modality** they support. Emotion recognition systems are heavily dependent on **data diversity**, **labeling quality**, and **sensor synchronization**.
 
 #### **1. Visual Datasets**
 
-Used primarily for **Facial Expression Recognition (FER)**.
+Used primarily for **(FER)**.
 
 **Examples:**
 - **CK+ (Extended Cohn-Kanade)** — posed expressions with temporal sequences.
@@ -244,11 +228,10 @@ Used primarily for **Facial Expression Recognition (FER)**.
 
 > The article emphasizes that visual datasets are often **limited by demographic bias**, expression subtlety, and controlled environments.
 
----
 
 #### **2. Audio Datasets**
 
-Used for **Speech Emotion Recognition (SER)**.
+Used for **(SER)**.
 
 **Examples:**
 - **Emo-DB** — acted German speech with 7 emotion labels.
@@ -257,7 +240,6 @@ Used for **Speech Emotion Recognition (SER)**.
 
 > The paper highlights issues like **language-dependence** and **acting bias**, which reduce generalization across cultures or real-world speech.
 
----
 
 #### **3. Physiological Signal Datasets**
 
@@ -269,8 +251,6 @@ Often used in health-related or stress/mood studies.
 - **DREAMER** — audio-visual elicited emotions with EEG and ECG signals.
 
 > Most physiological datasets are **small** in subject count and suffer from **inter-subject variability**.
-
----
 
 #### **4. Multimodal Datasets**
 
