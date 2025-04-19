@@ -1,116 +1,95 @@
+# A Multimodal Fusion Approach for Emotion Recognition  
+*Srihari M. & Bhaskaran V., 2024*
 
-## **A Multimodal Fusion Approach: Emotion Identification from Audio and Video Using Convolutional Neural Network**  
-*(Srihari M., Bhaskaran V., 2024)*
-
-A complete pipeline for **emotion recognition** using both **speech (audio)** and **facial expression (video)** data, fused using a **late fusion** strategy with deep learning models.
-
----
-- **audio and visual inputs**.
-- Predict complex emotions beyond simple sentiment analysis (not just “happy” or “sad”).
-- Focus on **simple, low-compute architectures** that still give **high accuracy**.
-- Evaluate on the **RAVDESS dataset** (Ryerson Audio-Visual Database of Emotional Speech and Song).
+A complete pipeline that ingests **speech (audio)** and **facial‑expression video**, then predicts one of **eight emotions**.  
+The two streams are combined with a **late‑fusion averaging step**.
 
 ---
 
-## **Video Modality: Facial Expression Recognition (FER)**
+## Key ideas
 
-### Preprocessing
-- Videos are **split into 22 static frames** using OpenCV.
-- Faces are cropped using **Haar Cascade face detection**.
-- Images are resized to **48x48** to reduce memory and speed up training.
-- **Image embeddings** are generated using a pre-trained **Vision Transformer (ViT)**:
-  - Specifically: `google/vit-base-patch16-224-in21k`.
-
-### Video Model Architectures
-Several CNN-based models were tested. The best-performing one was:
-
-- **2D 2CNN + 3 Linear Layers**:
-  - 2 Conv layers with 32 and 64 filters.
-  - Flattened to 48,640 neurons.
-  - Fully connected layers: 128 → 64 → 8 (emotion classes).
-  - Softmax for output probabilities.
-
-**Best video-only model performance**:
-- Accuracy: **84.57%**
-- F1-score: **0.8053**
+* Keep the models **lightweight** so they fit on modest hardware.  
+* Classify eight discrete emotions (not just “positive vs. negative”).  
+* All experiments use the **RAVDESS** audio‑video dataset.
 
 ---
 
-## **Audio Modality: Speech Emotion Recognition (SER)**
+## Video branch – Facial Expression Recognition (FER)
 
-### Preprocessing and Feature Extraction
-- Extracted features:
-  - **Zero Crossing Rate (ZCR)**: measures frequency sign changes.
-  - **Root Mean Square (RMS)**: average energy/loudness.
-  - **Mel Frequency Cepstral Coefficients (MFCCs)**: audio spectral shape.
+| Step | Method |
+|------|--------|
+|Frame extraction|Split each clip into **22 frames** with OpenCV.|
+|Face detection|Haar‑cascade; crop the face region.|
+|Resize|Scale faces to **48 × 48 px**.|
+|Feature embedder|Pre‑trained **Vision Transformer**: `vit‑base‑patch16‑224‑in21k`.|
+|Classifier|**2‑layer 2‑D CNN** (32 & 64 filters) → flatten (48 640 units) → **3 dense layers** (128 → 64 → 8) → soft‑max.|
 
-- Data augmentation techniques:
-  - **Gaussian noise**, **pitch shifting**, and combined **noise + pitch** variations.
+**Video‑only performance**
 
-### Audio Model Architectures
-Several CNN and CNN+Transformer models were tested. The top performer:
-
-- **1D 5CNN + 2 Linear Layers**:
-  - 5 convolutional layers: 512 → 512 → 256 → 256 → 128 filters.
-  - Flattened to 23,936 features.
-  - Linear layers: 512 → 8 classes (Softmax output).
-
-**Best audio-only model performance**:
-- Accuracy: **78.76%**
-- F1-score: **0.7851**
+* Accuracy **84.6 %**  
+* F1 **0.805**
 
 ---
 
-### Late Fusion
-- Predictions are made separately.
-- The **probability distributions** (Softmax outputs) are **averaged**.
-- Final emotion prediction is taken as the **argmax** of the averaged vector.
+## Audio branch – Speech Emotion Recognition (SER)
 
-**Fusion performance** (on 1440 RAVDESS samples):
-- Accuracy: **97.22%**
-- F1-score: **0.9722**
-- Precision/Recall: ~97% each
+| Step | Method |
+|------|--------|
+|Acoustic features|**Zero‑Crossing Rate**, **RMS energy**, **MFCCs**.|
+|Augmentation|Add Gaussian noise, pitch‑shift, or both.|
+|Classifier|**1‑D CNN** with 5 conv layers (512 → 512 → 256 → 256 → 128 filters) → flatten (23 936 features) → **2 dense layers** (512 → 8) → soft‑max.|
 
-> **Extremely high accuracy**, likely due to the **clean and balanced dataset (RAVDESS)** and careful preprocessing.
+**Audio‑only performance**
 
----
-
-## Dataset: RAVDESS
-- Contains **1440 audio-visual samples** from **24 professional actors**.
-- Each actor expresses 8 emotions:
-  - Anger, Calm, Disgust, Fear, Happy, Neutral, Sad, Surprise.
+* Accuracy **78.8 %**  
+* F1 **0.785**
 
 ---
 
-## Observations (from the Authors)
+## Late fusion
 
-- Complex deep networks **did not always outperform** simpler ones.
-- Preprocessing (e.g., facial cropping and feature-rich embeddings) had major impact.
-- The **Vision Transformer (ViT)** helped improve FER performance substantially.
-- **Late fusion** proved simpler and more effective than earlier attempts with **early fusion** or attention-based models.
+1. Run FER and SER models independently.  
+2. **Average** their soft‑max probability vectors.  
+3. Choose the emotion with the highest averaged score.
 
----
+**Fusion results** (1 440 RAVDESS clips)
 
-## Conclusion
-- Even simple CNN-based architectures can be highly effective when:
-  - Preprocessing is solid.
-  - Feature extraction is rich (e.g., using pretrained ViT).
-- Fusion improves robustness significantly, especially in noisy or ambiguous scenarios.
-- This pipeline is suitable for Chatbots, intelligent assistants, emotion-aware interfaces etc.
+* Accuracy **97.2 %**  
+* F1 **0.972** (precision and recall ≈ 97 %).
+
+> The high score is helped by RAVDESS being clean and well balanced.
 
 ---
 
-# Note:
-## Feature Embedding
-means:
-Embeddings (i.e., vector representations of data) that capture a lot of meaningful and discriminative information about the input, making it easier for the model to learn and classify.
+## RAVDESS in one line
 
-In this paper:
-They used pretrained Vision Transformer (ViT) models to extract features from face images.
+* 24 professional actors.  
+* 1 440 clips labelled: anger, calm, disgust, fear, happy, neutral, sad, surprise.
 
-Instead of raw pixels or simple filters, ViT outputs high-dimensional vectors that capture facial structure, local expression changes (mouth curve, eyebrow raise), Global context of the image (e.g., head orientation, lighting).
+---
 
-These embeddings are considered “feature-rich” because they hold more emotion-relevant information than basic hand-crafted features like HOG or LBP.
+## Author observations
 
-Because raw pixels are redundant, noisy, and unstructured. Embeddings compress the image into something compact. numerically stable, and semantically informative.
+* Careful **pre‑processing** and **ViT embeddings** mattered more than huge networks.  
+* **Late fusion** outperformed their attempts at early‑ and attention‑based fusion.
+
+---
+
+## Take‑aways
+
+* **Simple CNNs** plus strong features (ViT for video, MFCC for audio) deliver solid accuracy.  
+* Averaging probabilities makes the system robust when one modality is noisy.  
+* Suitable for chat‑bots, virtual agents, and other emotion‑aware interfaces—as long as data resemble studio conditions.
+
+---
+
+## Why ViT embeddings help
+
+A pre‑trained *Vision Transformer* converts each face crop into a compact vector that captures:
+
+* facial geometry  
+* local expression changes (e.g., smile curvature, eyebrow raise)  
+* global context (pose, lighting)
+
+These vectors hold more emotion‑relevant information than raw pixels or hand‑crafted HOG/LBP features, allowing even a small classifier to learn quickly.
 
