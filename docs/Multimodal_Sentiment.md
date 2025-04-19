@@ -2,7 +2,7 @@
 **“Multimodal Sentiment Analysis Using Hierarchical Fusion with Context Modeling”** (Majumder et al., 2018).
 
 #### Problem:
-- Sentiment analysis using **just text**, **just audio**, or **just video** often misses the full picture.
+- Sentiment analysis **just text**, **just audio**, or **just video** often misses the full picture.
 - Simple **feature concatenation** across modalities leads to *noisy*, hard-to-train models with redundant or misaligned information.
 
 #### Proposed Solution:
