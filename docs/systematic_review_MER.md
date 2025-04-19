@@ -2,10 +2,8 @@
 
 
 
-## Facial Expression Recognition (FER) in the Context of Multimodal Emotion Recognition (MER)
+## FER in the Context of Multimodal Emotion Recognition (MER)
 
-### Key Points about FER
-- **Facial expressions** are considered one of the **most recognizable and widely used** indicators of emotion.
 - They are **non-intrusive**, rich in **affective information**, and suitable for **real-time emotion recognition systems**.
 
 ### Psychological Basis
@@ -19,12 +17,11 @@
   - **Convolutional Neural Networks (CNN)** and **Recurrent Neural Networks (RNN)** for spatial-temporal modeling.
   - **Multiview attention mechanisms** and **cross-attention models** are now used to emphasize critical emotional regions in the face.
 
----
 
 ## Audio-Visual Emotion Recognition (A-V MER)
 
 ### Audio + Visual?
-- Audio and visual cues provide **complementary information**.
+- Provide **complementary information**.
 - Facial expressions can be **faked or masked**, but vocal tone often reveals the true emotion.
 - Audio helps where facial data is occluded; visual helps when audio is noisy or unavailable.
 
@@ -46,8 +43,6 @@
 - Techniques like **Multimodal Transformers** align and fuse A-V data at multiple levels.
 - These are now standard in **state-of-the-art** MER systems.
 
----
-
 ## Example Models and Results
 
 | Model / Study | Modalities | Fusion | Notable Accuracy / Dataset |
@@ -64,8 +59,6 @@
 - **CMU-MOSEI**: includes over 23,000 annotated A-V samples.
 - **CREMA-D**, **RAVDESS**, **AFEW**, **SFEW**: widely used for A-V FER.
 - Many datasets now use **real-world clips**, e.g., movies or interviews, increasing diversity but also noise and occlusion challenges.
-
----
 
 ## Challenges Highlighted
 - **Synchronization** of audio and video streams is essential for good fusion.
