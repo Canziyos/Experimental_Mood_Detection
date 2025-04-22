@@ -74,8 +74,12 @@ The two streams are combined with a **late‑fusion averaging step**.
 * **Late fusion** outperformed their attempts at early‑ and attention‑based fusion.
 
 ---
+**Training settings**
+- Optimizer: Adam | Learning rate: 0.0001
+- Batch size: 32 | Epochs: 100
+- Frameworks: Python, Keras, OpenCV
 
-## Take‑aways
+### Take‑aways
 
 * **Simple CNNs** plus strong features (ViT for video, MFCC for audio) deliver solid accuracy.  
 * Averaging probabilities makes the system robust when one modality is noisy.  
@@ -83,7 +87,7 @@ The two streams are combined with a **late‑fusion averaging step**.
 
 ---
 
-## Why ViT embeddings help
+### Why ViT embeddings help
 
 A pre‑trained *Vision Transformer* converts each face crop into a compact vector that captures:
 

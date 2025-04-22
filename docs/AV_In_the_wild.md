@@ -1,4 +1,4 @@
-## Feature‑ and Decision‑Level Audio‑Visual Fusion for Emotion Recognition  
+## Feature-Level and Model-Level Audiovisual Fusion for Emotion Recognition in the Wild
 
 A study on how **combining speech and facial cues** can improve emotion‑recognition systems, with tests on both **feature‑level** and **decision‑level** fusion.
 
