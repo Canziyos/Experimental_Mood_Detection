@@ -7,6 +7,9 @@ The most common *baseline* models and datasets in emotion‑recognition research
 * **Modern baseline** – **ResNet‑18** (or ResNet‑50 for larger setups) fine‑tuned on FER+, RAF‑DB and AffectNet.  
 * Later work such as **EfficientFace**, **ResMaskNet** or **ViT‑based FER** all start from these CNN foundations but add attention, masking or transformer blocks.
 
+Note:  
+FER+ introduced soft label distributions, which helped move away from single-label rigidity.
+
 > **Key reference**: Barsoum et al., *“FER+: Training Deep Networks for Facial Expression Recognition with Crowd‑Sourced Label Distribution.”*
 
 ---
@@ -17,6 +20,7 @@ The most common *baseline* models and datasets in emotion‑recognition research
 
 1. **Log‑Mel Spectrogram + 2D‑CNN** (often ResNet‑34 or VGG‑like).  
 2. **MFCCs + BiLSTM / 1‑D CNN** (the older but still widely used variant).
+3. wav2vec and HuBERT are recent transformer-style encoders for SER that are gaining ground (especially in 2023–2024).
 
 > **End‑to‑end waveform**: Trigeorgis et al., *“Adieu Features? End‑to‑End Speech Emotion Recognition Using a Deep Convolutional Recurrent Network,”* shows that raw‑waveform CNN‑RNN can outperform hand‑crafted MFCC pipelines when enough data are available.
 
@@ -28,6 +32,7 @@ The most common *baseline* models and datasets in emotion‑recognition research
 
 * **Tensor Fusion Network (TFN)** – first widely adopted end‑to‑end fusion of audio + video + text (Zadeh et al., 2017).  
 * Since 2020, most papers also compare against **LMF**, **MulT**, and **MISA**, which provide parameter‑efficient or transformer‑based fusion.
+* **MulT** introduced cross-modal attention, which was a conceptual leap forward (not just tensor algebra anymore).
 
 * **Benchmark datasets**: **CMU‑MOSI** and **CMU‑MOSEI**.
 
@@ -36,10 +41,13 @@ The most common *baseline* models and datasets in emotion‑recognition research
 ## 4 . Continuous Affective State / “Mood” Detection
 
 * No single canonical model.  
-* Most systems stack **FER** and/or **SER** encoders and add a temporal model (**BLSTM, GRU, Temporal CNN, or Transformer**) to track valence–arousal curves over time.  
+* Most systems stack **FER** and/or **SER** encoders and add a temporal model (**BLSTM, GRU, Temporal CNN, or Transformer**) to track valence–a/rousal curves over time.  
 * In clinical studies (dementia, depression) researchers often fuse non‑visual signals such as rPPG heart rate, accelerometry, or ambient audio.
 
 * **Datasets**: RECOLA, SEWA for valence/arousal; smaller private clinical sets for dementia.
+
+note:  
+SEWA also includes facial landmarks and audio–visual alignment, making it richer than RECOLA.
 
 ---
 
