@@ -174,7 +174,7 @@ cython_debug/
 .pypirc
 
 # Ignore datasets
-DATASET/
+#DATASET/
 Dataset_eld/
 *.csv
 *.json
@@ -182,7 +182,7 @@ Dataset_eld/
 *.tar
 
 # Ignore trained model weights
-#*.pth
+*.pth
 *.pt
 *.onnx
 *.h5
