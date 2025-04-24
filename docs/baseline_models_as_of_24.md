@@ -1,3 +1,11 @@
+Notes:
+
+
+- Only in recent years have people started creating models tailored to FER-specific needs like subtle emotion cues, soft labels, or facial occlusions.
+
+
+
+---
 The most common *baseline* models and datasets in emotion‑recognition research (as of 2024).
 
 

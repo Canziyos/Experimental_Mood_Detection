@@ -182,7 +182,7 @@ Dataset_eld/
 *.tar
 
 # Ignore trained model weights
-*.pth
+#*.pth
 *.pt
 *.onnx
 *.h5
