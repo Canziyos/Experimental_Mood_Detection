@@ -174,7 +174,7 @@ cython_debug/
 .pypirc
 
 # Ignore datasets
-#DATASET/
+DATASET/
 Dataset_eld/
 *.csv
 *.json
