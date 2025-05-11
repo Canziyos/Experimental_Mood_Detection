@@ -174,8 +174,6 @@ cython_debug/
 .pypirc
 
 # Ignore datasets
-DATASET/
-Dataset_eld/
 *.csv
 *.json
 *.zip
@@ -193,8 +191,7 @@ Dataset_eld/
 *.jpeg
 *.gif
 *.svg
-mobilenet_feature_vectors.csv
-mobilenet_feature_clusters.png
+*.wav
 
 # Ignore logs
 *.log
