@@ -16,7 +16,7 @@ import os
 import numpy as np
 import librosa
 
-# Relative paths from scripts/
+
 aud_dir = os.path.abspath(os.path.join("..", "data", "audio"))
 out_dir = os.path.abspath(os.path.join("..", "augmented_features"))
 
