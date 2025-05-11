@@ -192,6 +192,7 @@ cython_debug/
 *.gif
 *.svg
 *.wav
+*.npy
 
 # Ignore logs
 *.log
