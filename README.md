@@ -1,19 +1,19 @@
 # Experimental_Mood_Detection
-Personal sandbox for experimenting with FER models, data strategies, and uncertainty handling in mood detection for elderly care.
+Personal sandbox for experimenting with MER models, data strategies, and uncertainty handling in mood detection for elderly care.
 
 ## What has been done so far
 
-- **Dataset preparation**  
-  RAF-DB is the base dataset. Faces were filtered by estimated age (≥ 47 years) using DeepFace to isolate examples of older individuals, followed by manual control.
+- Audio model is based on Srihari et al., with slight modifications.
 
-- **Model training**  
-  Two models were trained from scratch using full fine-tuning:
-  - MobileNetV2 trained for 10 epochs
-  - ResNet18 trained for 3 epochs  
-  Both models achieved strong accuracy, particularly on subsets containing elderly faces.
+### Dataset Preparation
 
-- **Evaluation**  
-  Accuracy was measured on the full test set and on the filtered elderly subset. Confusion matrices were generated, and all predictions were logged to CSV.
+- Please review the `README` files in both `clean_features` and `augmented_features` to locate your dataset and understand the folder structure.
+- To build the datasets, run the following scripts (found in the `scripts` folder):
+  - `build_clean_dataset.py`
+  - `build_augmented_dataset.py`
+- Once the datasets are prepared, you can proceed to run `audio_train.py`.  
+  (Note: other components will be added gradually.)
+
 
 - **Feature space analysis**  
   Feature vectors from the trained models were extracted and visualized using t-SNE to observe how different emotion classes are represented in the latent space.
