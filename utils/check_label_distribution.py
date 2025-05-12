@@ -3,7 +3,7 @@ import numpy as np
 # Load the label array
 y = np.load("./processed_data/y_aug.npy")
 
-# Same label map you used when building the dataset
+
 label_map = {
     0: "Angery",
     1: "Disgust",
@@ -13,7 +13,7 @@ label_map = {
     5: "Sad"
 }
 
-# Count the number of occurrences of each label
+
 unique, counts = np.unique(y, return_counts=True)
 
 print("Label distribution in y_aug.npy:")

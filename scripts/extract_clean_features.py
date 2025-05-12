@@ -45,7 +45,7 @@ def normalize_matrix(matrix):
 
 print("Starting audio feature extraction...")
 
-# Loop through each emotion folder
+
 for emotion_label in os.listdir(aud_dir):
     emotion_dir = os.path.join(aud_dir, emotion_label)
     if not os.path.isdir(emotion_dir):

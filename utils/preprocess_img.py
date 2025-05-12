@@ -19,7 +19,7 @@ label_map = {
     "Sad": 5,
 }
 
-# === Load the goddamn RetinaFace model ===
+# === Load the g RetinaFace model ===
 app = FaceAnalysis(
     name="buffalo_l",
     providers=["CUDAExecutionProvider" if torch.cuda.is_available() else "CPUExecutionProvider"]
