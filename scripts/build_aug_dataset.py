@@ -20,23 +20,23 @@ Only includes classes listed in label_map. All others get ignored.
 import os
 import numpy as np
 
-# Input: location of extracted features (organized by emotion)
+# Input: location of extracted features (organized by emotion).
 feature_dir = os.path.abspath(os.path.join("..", "augmented_features"))
 
-# Output: where to save the final training-ready data
+# Output.
 out_dir = os.path.abspath(os.path.join("..", "processed_data"))
 os.makedirs(out_dir, exist_ok=True)
 
-# Expected variations for each base sample
+# Expected variations for each base sample.
 aug_suffix = ["", "_pitch", "_noise"]
 
 # Output filenames
 X_OUT = "X_aug.npy"
 Y_OUT = "y_aug.npy"
 
-# Class label mapping (Surprise removed)
+# Class label mapping.
 label_map = {
-    "Angery": 0,
+    "Angry": 0,
     "Disgust": 1,
     "Fear": 2,
     "Happy": 3,
@@ -49,7 +49,7 @@ y = []
 
 print("Starting to build augmented feature dataset...")
 
-# Loop through emotion folders
+
 for label_name, label_idx in label_map.items():
     class_dir = os.path.join(feature_dir, label_name)
     if not os.path.isdir(class_dir):
@@ -58,7 +58,7 @@ for label_name, label_idx in label_map.items():
 
     print(f"\nProcessing class '{label_name}' (label {label_idx})...")
 
-    # Get base files (not pitch or noise variants)
+    # Get base files (not pitch or noise).
     base_files = [
         f for f in os.listdir(class_dir)
         if f.endswith(".npy") and not any(suffix in f for suffix in ["_pitch", "_noise"])
@@ -95,7 +95,6 @@ for label_name, label_idx in label_map.items():
 
     print(f"Added: {added} files | Skipped: {skipped}.")
 
-# Final output
 print("\nFinalizing...")
 
 X = np.stack(X)

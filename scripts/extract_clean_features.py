@@ -8,7 +8,7 @@ import os
 import numpy as np
 import librosa
 
-aud_dir = os.path.abspath(os.path.join("..", "data", "audio"))
+aud_dir = os.path.abspath(os.path.join("..", "dataset", "audio"))
 output_dir = os.path.abspath(os.path.join("..", "clean_features"))
 
 SAMPLE_RATE = 44100

@@ -17,13 +17,13 @@ import numpy as np
 import librosa
 
 
-aud_dir = os.path.abspath(os.path.join("..", "data", "audio"))
+aud_dir = os.path.abspath(os.path.join("..", "dataset", "Audio"))
 out_dir = os.path.abspath(os.path.join("..", "augmented_features"))
 
 
 sample_rate = 44100  # Match audio extracted via moviepy which uses fmpeg under hood and i used it.
 n_mfcc = 13          # Standard for speech/emotion tasks; captures core spectral features.
-frames = 300         # fixed-length inputs; fits most speech clips (2–4 sec).
+frames = 300         # fixed-length inputs; fits our speech clips (2–4 sec).
 
 
 os.makedirs(out_dir, exist_ok=True)
