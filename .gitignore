@@ -186,6 +186,7 @@ cython_debug/
 *.h5
 
 # Ignore result images and outputs
+
 *.png
 *.jpg
 *.jpeg
@@ -193,7 +194,8 @@ cython_debug/
 *.svg
 *.wav
 *.npy
-
+data/image/
+data/audio/
 # Ignore logs
 *.log
 logs/
