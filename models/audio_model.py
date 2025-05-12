@@ -56,4 +56,4 @@ class AudioCNN1D(nn.Module):
         # === Added dropout after FC1 (not in original paper) ===
         x = self.dropout(F.relu(self.fc1(x)))
 
-        return x  # this is the vector we can use for fusion later
+        return x  # this is the vector we can use for fusion later.
