@@ -43,7 +43,7 @@ class ImageCNN2D(nn.Module):
         # Flatten conv output into a single vector per sample.
         x = x.view(x.size(0), -1)
 
-        # Feedforward fully connected stack to compress and prepare for fusion(our intrepretation).
+        # Feedforward fully connected stack to compress and prepare for fusion(own intrepretation).
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return x  # Final latent feature shape: (B, 64).
