@@ -16,7 +16,7 @@ The features are:
 
 ### How to generate these files:
 
-1. Make sure your original `.wav` files are under `data/audio/`, with one folder per emotion class (e.g., `Angery/`, `Happy/`, etc.).
+1. Make sure your original `.wav` files are under `dataset/Audio/`, with one folder per emotion class (e.g., `Angery/`, `Happy/`, etc.).
 
 2. Run the script `extract_clean_features.py` in the `scripts` folder
 
@@ -25,7 +25,7 @@ The features are:
 
 For this input:
 
-data/audio/Happy/sample01.wav
+dataset/Audio/Happy/sample01.wav
 
 
 You'll get:

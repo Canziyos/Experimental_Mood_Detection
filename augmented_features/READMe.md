@@ -21,7 +21,7 @@ All features:
 
 ### How to generate these files:
 
-1. Locate your audio files under `data/audio/`, with one folder per emotion class (e.g., `Angery/`, `Happy/`, etc.).
+1. Locate your audio files under `dataset/Audio/`, with one folder per emotion class (e.g., `Angry/`, `Happy/`, etc.).
 
 2. Run the script `extract_features_augmented.py` from the `scripts` folder.
 
@@ -31,7 +31,7 @@ All features:
 
 For this input:
 
-- data/audio/Sad/sample27.wav
+- dataset/Audio/Sad/sample27.wav
 
 
 You'll get:
