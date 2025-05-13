@@ -41,7 +41,7 @@ def make_loaders(cfg: Config):
 
     def _loader(X_split, y_split, shuffle):
         ds = EmotionDataset(X_split, y_split)
-        return DataLoader(ds, batch_size=cfg.batch_size, shuffle=shuffle, num_workers=2)
+        return ds, DataLoader(ds, batch_size=cfg.batch_size, shuffle=shuffle, num_workers=2)
 
     return {
         "train": _loader(X_train, y_train, True),
