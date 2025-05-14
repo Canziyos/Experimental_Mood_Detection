@@ -27,7 +27,7 @@ def main():
     cfg = Config(mode=args.mode)
     set_seed(cfg.seed)
 
-    loaders = make_loaders(cfg)
+    loaders = DataLoader(cfg)
     model = AudioCNN1D()
 
     model, _ = train(model, loaders, cfg)

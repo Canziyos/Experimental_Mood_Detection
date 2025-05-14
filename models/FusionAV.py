@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
-from models.audio_model import AudioCNN2D
-from models.image_model import ImageCNN2D
+from models.AudioCNN1D import AudioCNN1D
+from models.ImageCNN2D import ImageCNN2D
 
 
 class FusionAV(nn.Module):
@@ -10,7 +10,7 @@ class FusionAV(nn.Module):
         super(FusionAV, self).__init__()
 
         # our models.
-        self.audio_branch = AudioCNN2D()
+        self.audio_branch = AudioCNN1D()
         self.visual_branch = ImageCNN2D()
 
 
