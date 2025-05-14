@@ -1,49 +1,47 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
 
-class ImageCNN2D(nn.Module):
-    def __init__(self):
-        super(ImageCNN2D, self).__init__()
 
-        # First convolutional layer -input is grayscale image (B, 1, 48, 48).
-        # Paper specified kernel_size=3, output_channels=32, and pooling after this.
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+class MobileNetV2Encap(nn.Module):
+    """
+    Grayscale MobileNetV2 → 128‑D embedding → 6‑class logits.
+    extract_features(x) returns (B, 128) for fusion later.
+    """
+    def __init__(self, n_classes=6, embedding_dim=128,
+                 pretrained=True, freeze_backbone=False):
+        super().__init__()
 
-        # RGB for later test.
-        # self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-        
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  # (B, 32, 56, 56)
+        weights = MobileNet_V2_Weights.IMAGENET1K_V1 if pretrained else None
+        net = mobilenet_v2(weights=weights)
 
-        # Second conv layer -output_channels=64, same kernel size, followed by pooling again.
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)  # (B, 64, 28, 28).
+        # patch first conv: 3‑ch → 1‑ch
+        first = net.features[0][0]
+        net.features[0][0] = nn.Conv2d(
+            1, first.out_channels,
+            kernel_size=first.kernel_size,
+            stride=first.stride,
+            padding=first.padding,
+            bias=False,
+        )
 
-        # Flattening: 64*12*12 = 9216 matches paper's reported ~48640 neurons??!(unbelievably weird).
-        self.flatten_dim = 64 * 12 * 12 
+        if freeze_backbone:
+            for p in net.features.parameters():
+                p.requires_grad = False
 
-        # FC layers -paper used 128 --> 64 --> 8, we go 128 -> 64 -> 6 (no Surprise class).
-        self.fc1 = nn.Linear(self.flatten_dim, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 6)  # 6 emotion classes.
+        self.backbone = net.features              # (B, 1280, 7, 7) for 224×224
+        self.pool     = nn.AdaptiveAvgPool2d((1, 1))
+        self.embed    = nn.Linear(1280, embedding_dim)
+        self.act      = nn.ReLU(inplace=True)
+        self.out      = nn.Linear(embedding_dim, n_classes)
 
-    def forward(self, x):
-        x = self.extract_features(x)  # Get latent feature vector (B, 64).
-        x = self.fc3(x)               # Final classification layer (B, 6).
+    # ---------------------------------------------------------------------
+    def extract_features(self, x):
+        x = self.backbone(x)
+        x = self.pool(x).flatten(1)     # (B, 1280)
+        x = self.act(self.embed(x))     # (B, 128)
         return x
 
-    def extract_features(self, x):
-        # Convolution + ReLU + pooling as defined in the paper.
-        x = F.relu(self.conv1(x))
-        x = self.pool1(x)
-
-        x = F.relu(self.conv2(x))
-        x = self.pool2(x)
-
-        # Flatten conv output into a single vector per sample.
-        x = x.view(x.size(0), -1)
-
-        # Feedforward fully connected stack to compress and prepare for fusion(own intrepretation).
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return x  # Final latent feature shape: (B, 64).
+    def forward(self, x):
+        x = self.extract_features(x)
+        return self.out(x)

@@ -1,65 +1,70 @@
 from collections import defaultdict
-import time
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
-from tqdm import tqdm
-from pathlib import Path
+import time, numpy as np, torch
 from typing import Dict
-from evaluation import evaluate
+from sklearn.utils.class_weight import compute_class_weight
+from tqdm import tqdm
+import torch.nn as nn, torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 from config import Config
 
 def train(model: nn.Module, loaders: Dict[str, torch.utils.data.DataLoader], cfg: Config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    # class‑weighted loss
+    y_all = np.load(cfg.y_img_path, mmap_mode="r")
+    w = compute_class_weight("balanced",
+                             classes=np.arange(len(cfg.class_names)),
+                             y=y_all)
+    criterion = nn.CrossEntropyLoss(weight=torch.tensor(w, dtype=torch.float32, device=device))
     optimizer = optim.Adam(model.parameters(), lr=cfg.lr)
     scheduler = StepLR(optimizer, step_size=cfg.step_size, gamma=cfg.gamma)
 
-    metrics = defaultdict(list)
-    best_val_acc = 0.0
-    cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = cfg.checkpoint_dir / f"image_cnn2d_{cfg.mode}.pth"
+    best, history = 0.0, defaultdict(list)
+    ckpt = cfg.checkpoint_dir / f"mobilenet_{cfg.img_mode}.pth"
+    cfg.checkpoint_dir.mkdir(exist_ok=True)
 
     for epoch in range(cfg.num_epochs):
         model.train()
-        epoch_loss, correct, total = 0.0, 0, 0
-        start = time.time()
-
-        for inputs, labels in tqdm(loaders["train"], desc=f"Epoch {epoch+1}/{cfg.num_epochs}"):
-            inputs, labels = inputs.to(device), labels.to(device)
+        tot_loss = tot_correct = tot_count = 0
+        for imgs, labels in tqdm(loaders["train"], desc=f"Epoch {epoch+1}/{cfg.num_epochs}", leave=False):
+            imgs, labels = imgs.to(device), labels.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            logits = model(imgs)
+            loss = criterion(logits, labels)
             loss.backward()
             optimizer.step()
 
-            epoch_loss += loss.item()
-            preds = outputs.argmax(1)
-            correct += (preds == labels).sum().item()
-            total += labels.size(0)
+            tot_loss += loss.item()
+            pred = logits.argmax(1)
+            tot_correct += (pred == labels).sum().item()
+            tot_count += labels.size(0)
 
-        train_acc = 100 * correct / total
-        train_loss = epoch_loss / len(loaders["train"])
-        val_loss, val_acc = evaluate(model, loaders["val"], criterion, device)
+        tr_acc = 100 * tot_correct / tot_count
+        tr_loss = tot_loss / len(loaders["train"])
+
+        # validation
+        model.eval()
+        v_loss = v_correct = v_count = 0
+        with torch.no_grad():
+            for imgs, labels in loaders["val"]:
+                imgs, labels = imgs.to(device), labels.to(device)
+                logits = model(imgs)
+                v_loss += criterion(logits, labels).item()
+                v_correct += (logits.argmax(1) == labels).sum().item()
+                v_count += labels.size(0)
+        v_acc  = 100 * v_correct / v_count
+        v_loss /= len(loaders["val"])
+
         scheduler.step()
+        print(f"Ep {epoch+1:02d} | train {tr_loss:.3f}/{tr_acc:.1f}% | val {v_loss:.3f}/{v_acc:.1f}%")
 
-        print(
-            f"Epoch {epoch+1} | "
-            f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}% | "
-            f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}% | "
-            f"{time.time() - start:.1f}s"
-        )
+        history["train_acc"].append(tr_acc)
+        history["val_acc"].append(v_acc)
+        if v_acc > best:
+            best = v_acc
+            torch.save(model.state_dict(), ckpt)
+            print(f"↑ best model saved ({best:.2f}%)")
 
-        metrics["train_acc"].append(train_acc)
-        metrics["val_acc"].append(val_acc)
-
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            torch.save(model.state_dict(), ckpt_path)
-            print(f"Model improved → saved to {ckpt_path}")
-
-    model.load_state_dict(torch.load(ckpt_path))
-    return model, metrics
+    model.load_state_dict(torch.load(ckpt))
+    return model, history

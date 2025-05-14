@@ -1,59 +1,48 @@
-import argparse
-import torch
+# img_train.py – Train the MobileNetV2 image branch
+import argparse, torch
 from config import Config
-from face_loader import ImageEmotionDataset
+from dataset.img_loader import make_image_loaders
 from img_trainer import train
 from evaluation import final_report
-from models.ImageCNN2D import ImageCNN2D
-from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
-import numpy as np
+from models.ImageCNN2D import ImageCNN2D as MobileNetV2Encap
 
+
+# ───────────────────────────────────────────────────────────────
 def parse_args():
-    p = argparse.ArgumentParser(description="Train 2D CNN on facial expression data")
-    p.add_argument("mode", choices=["clean", "augmented"], help="dataset variant to use")
+    p = argparse.ArgumentParser("Train MobileNetV2 on facial‑expression data")
+    p.add_argument("mode", choices=["img", "rgb"],
+                   help="dataset variant (grayscale vs RGB)")
     return p.parse_args()
 
+
 def set_seed(seed: int):
-    import random
-    import numpy as np
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
+    import random, numpy as np
+    random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-def build_dataloaders(cfg: Config):
-    # Load raw npy files and split them
-    X = np.load(cfg.x_img_path)
-    y = np.load(cfg.y_img_path)
-
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=cfg.test_size + cfg.val_size, stratify=y, random_state=cfg.seed)
-    val_ratio = cfg.val_size / (cfg.test_size + cfg.val_size)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=1 - val_ratio, stratify=y_temp, random_state=cfg.seed)
-
-    train_ds = ImageEmotionDataset(X_train, y_train)
-    val_ds = ImageEmotionDataset(X_val, y_val)
-    test_ds = ImageEmotionDataset(X_test, y_test)
-
-    loaders = {
-        "train": DataLoader(train_ds, batch_size=cfg.batch_size, shuffle=True),
-        "val":   DataLoader(val_ds, batch_size=cfg.batch_size),
-        "test":  DataLoader(test_ds, batch_size=cfg.batch_size),
-    }
-
-    return loaders
 
 def main():
     args = parse_args()
-    cfg = Config(mode=args.mode)
+    cfg  = Config(img_mode=args.mode)
     set_seed(cfg.seed)
 
-    loaders = build_dataloaders(cfg)
-    model = ImageCNN2D()
+    # --- data ---------------------------------------------------------------
+    loaders = make_image_loaders(cfg)           # train / val / test DataLoaders
 
+    # --- model --------------------------------------------------------------
+    model = MobileNetV2Encap(pretrained=True, freeze_backbone=False)
+    print(f"[INFO] Starting training – lr={cfg.lr}, mode={cfg.img_mode}, "
+          f"epochs={cfg.num_epochs}")
+
+    # --- training -----------------------------------------------------------
     model, _ = train(model, loaders, cfg)
+
+    # --- final evaluation ---------------------------------------------------
     final_report(model, loaders["test"], cfg)
+
+    print("[INFO] Run complete.")
+
 
 if __name__ == "__main__":
     main()

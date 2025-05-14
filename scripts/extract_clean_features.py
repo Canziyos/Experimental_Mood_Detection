@@ -23,7 +23,7 @@ def extract_features(filepath):
         zcr = librosa.feature.zero_crossing_rate(y)[0]
         rms = librosa.feature.rms(y=y)[0]
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=N_MFCC)
-        return np.vstack([zcr, rms, mfcc])  # shape: (15, T)
+        return np.vstack([zcr, rms, mfcc])  # shape: (15, T).
     except Exception as e:
         print(f"Error processing {filepath}: {e}")
         return None
@@ -60,7 +60,7 @@ for emotion_label in os.listdir(aud_dir):
 
     for fname in os.listdir(emotion_dir):
         if not fname.lower().endswith(".wav"):
-            print(f"  Skipped non-wav file: {fname}")
+            print(f"Skipped non-wav file: {fname}")
             continue
 
         fpath = os.path.join(emotion_dir, fname)

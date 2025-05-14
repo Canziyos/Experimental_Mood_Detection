@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from config import Config
+
+cfg = Config()
 
 class AudioCNN1D(nn.Module):
-    def __init__(self, input_channels=15, input_length=300):
+    def __init__(self, cfg.input_channels, cfg.input_length):
         super(AudioCNN1D, self).__init__()
 
         # === From Srihari. (audio model) ===

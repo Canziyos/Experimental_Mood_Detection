@@ -1,158 +1,134 @@
-# import os
-# import numpy as np
-# import cv2
-# from PIL import Image
-# from facenet_pytorch import MTCNN
-# import torch
-# from config import Config
+#!/usr/bin/env python
+"""
+preprocess_img.py  – Create X_img.npy / y_img.npy for MobileNetV2 pipeline.
 
-# cfg = Config()
+• Walks dataset/images/<class_name> folders from Config.
+• Detects largest face with RetinaFace (InsightFace) by default; --mtcnn flag switches to MTCNN.
+• Handles RGB, grayscale, and 4‑channel (RGBA) source files.
+• Falls back to full frame if no face found.
+• Converts to grayscale, resizes to 224×224, saves uint8 [0‑255].
+"""
 
-# # config paths
-# img_dir = cfg.image_dir
-# save_x = cfg.x_img_path
-# save_y = cfg.y_img_path
-# resize_to = (48, 48)
-
-# save_x.parent.mkdir(parents=True, exist_ok=True)
-
-# # Use class names from config to build label map
-# label_map = {name: idx for idx, name in enumerate(cfg.class_names)}
-
-# mtcnn = MTCNN(keep_all=False, device='cuda' if torch.cuda.is_available() else 'cpu')
-
-# X, y = [], []
-
-# print("Starting preprocessing pipeline...")
-# print(f"Dataset path: {img_dir}")
-# print(f"Saving to: {save_x}, {save_y}")
-# print(f"Target size: {resize_to}")
-# print(f"Device: {'cuda' if torch.cuda.is_available() else 'cpu'}")
-
-# # Check folders before starting.
-# print("\nChecking expected class folders:")
-# for name in cfg.class_names:
-#     folder = img_dir / name
-#     print(f"{folder} --> {'OK' if folder.exists() else 'MISSING'}")
-
-# total_processed = 0
-# total_detected = 0
-# total_fallbacks = 0
-# total_errors = 0
-
-# # Loop through each class folder
-# for label_name, label_idx in label_map.items():
-#     folder = img_dir / label_name
-#     if not folder.is_dir():
-#         print(f"[Skip] Missing folder: {folder}")
-#         continue
-
-#     print(f"\nProcessing '{label_name}' --> class {label_idx}")
-#     count = 0
-
-#     for fname in os.listdir(folder):
-#         if not fname.lower().endswith((".png", ".jpg", ".jpeg")):
-#             continue
-
-#         fpath = folder / fname
-#         count += 1
-#         total_processed += 1
-
-#         try:
-#             img_cv = cv2.imread(str(fpath))
-#             if img_cv is None:
-#                 print(f"Failed to load image: {fpath}")
-#                 total_errors += 1
-#                 continue
-
-#             img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-#             img_pil = Image.fromarray(img_rgb)
-
-#             face = mtcnn(img_pil)
-#             if face is not None:
-#                 total_detected += 1
-#                 face = face.permute(1, 2, 0).cpu().numpy()
-#                 face = cv2.cvtColor(face, cv2.COLOR_RGB2GRAY)
-#             else:
-#                 total_fallbacks += 1
-#                 face = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-
-#             face_resized = cv2.resize(face, resize_to)
-#             face_resized = face_resized.astype("float32") / 255.0
-
-#             X.append(face_resized)
-#             y.append(label_idx)
-
-#         except Exception as e:
-#             total_errors += 1
-#             print(f"Error processing {fname}: {str(e)}")
-
-# print("\nSummary:")
-# print(f"Total images processed : {total_processed}")
-# print(f"Faces detected         : {total_detected}")
-# print(f"Fallbacks used         : {total_fallbacks}")
-# print(f"Errors encountered     : {total_errors}")
-
-# print("Saving NumPy arrays...")
-# X = np.array(X).reshape(-1, 1, 48, 48)
-# y = np.array(y)
-
-# np.save(save_x, X)
-# np.save(save_y, y)
-
-# print(f"Saved: {save_x} with shape {X.shape}")
-# print(f"Saved: {save_y} with shape {y.shape}")
-
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from config import Config
-
-# cfg = Config()
-
-# # Load preprocessed images and labels
-# X = np.load(cfg.x_img_path)
-# y = np.load(cfg.y_img_path)
-
-# print(f"Loaded {X.shape[0]} samples.")
-# print(f"Image shape: {X.shape[1:]}")
-
-# # Show 12 random samples with their class labels
-# fig, axes = plt.subplots(3, 4, figsize=(12, 9))
-# indices = np.random.choice(len(X), size=12, replace=False)
-
-# for ax, idx in zip(axes.flatten(), indices):
-#     img = X[idx][0]  # shape: [1, 48, 48] → take the 0-channel
-#     label = cfg.class_names[y[idx]]
-#     ax.imshow(img, cmap='gray')
-#     ax.set_title(f"{label}", fontsize=10)
-#     ax.axis('off')
-
-# plt.tight_layout()
-# plt.show()
-
-import numpy as np
-import matplotlib.pyplot as plt
+import argparse, os, cv2, numpy as np, torch
+from pathlib import Path
+from PIL import Image
 from config import Config
 
-cfg = Config()
-y = np.load(cfg.y_img_path)
+# -----------------------------------------------------------------------------
+def get_detector(use_mtcnn=False):
+    if use_mtcnn:
+        from facenet_pytorch import MTCNN
+        return MTCNN(keep_all=False,
+                     device='cuda' if torch.cuda.is_available() else 'cpu')
+    else:
+        from insightface.app import FaceAnalysis
+        providers = ['CUDAExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
+        app = FaceAnalysis(name="buffalo_l", providers=providers)
+        app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
+        return app
 
-# Count samples per class.
-unique, counts = np.unique(y, return_counts=True)
+# -----------------------------------------------------------------------------
+def ensure_bgr(img):
+    """Convert grayscale or BGRA images to 3‑channel BGR."""
+    if img is None:
+        return None
+    if img.ndim == 2:                         # H×W gray
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    elif img.shape[2] == 4:                   # H×W×4 BGRA
+        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    return img
 
-# Map to class names.
-class_names = cfg.class_names
-label_counts = dict(zip([class_names[i] for i in unique], counts))
+# -----------------------------------------------------------------------------
+def main():
+    argp = argparse.ArgumentParser()
+    argp.add_argument("--mtcnn", action="store_true",
+                      help="use MTCNN instead of RetinaFace")
+    args = argp.parse_args()
+
+    cfg = Config()
+    img_dir  = cfg.image_dir
+    save_x   = cfg.x_img_path
+    save_y   = cfg.y_img_path
+    out_size = (224, 224)
+
+    save_x.parent.mkdir(parents=True, exist_ok=True)
+    detector = get_detector(args.mtcnn)
+    label_map = {name: idx for idx, name in enumerate(cfg.class_names)}
+
+    X, y = [], []
+    totals = dict(processed=0, detected=0, fallback=0, errors=0)
+
+    print("=== Pre‑processing ===")
+    print(f"Src  : {img_dir}")
+    print(f"Dst  : {save_x.name}, {save_y.name}")
+    print(f"Size : {out_size}, detector={'MTCNN' if args.mtcnn else 'RetinaFace'}")
+    print("----------------------")
+
+    # ─── Traverse folders ─────────────────────────────────────────────────
+    for cls, idx in label_map.items():
+        folder: Path = img_dir / cls
+        if not folder.is_dir():
+            print(f"[WARN] missing folder {folder}")
+            continue
+
+        print(f"* {cls:7s} → label {idx}")
+        for fname in os.listdir(folder):
+            if not fname.lower().endswith((".png", ".jpg", ".jpeg")):
+                continue
+
+            fpath = folder / fname
+            totals["processed"] += 1
+            try:
+                img_bgr = cv2.imread(str(fpath), cv2.IMREAD_UNCHANGED)
+                img_bgr = ensure_bgr(img_bgr)
+                if img_bgr is None:
+                    raise ValueError("cv2.imread failed")
+
+                # ── Face detection ─────────────────────────────────────
+                face_gray = None
+                if args.mtcnn:
+                    pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+                    face = detector(pil)  # tensor or None
+                    if face is not None:
+                        totals["detected"] += 1
+                        face_rgb = face.permute(1, 2, 0).cpu().numpy()
+                        face_gray = cv2.cvtColor(face_rgb, cv2.COLOR_RGB2GRAY)
+                else:
+                    faces = detector.get(img_bgr)
+                    if faces:
+                        totals["detected"] += 1
+                        # choose largest face
+                        face = max(faces, key=lambda x: (x.bbox[2]-x.bbox[0])*(x.bbox[3]-x.bbox[1]))
+                        x1, y1, x2, y2 = map(int, face.bbox)
+                        crop = img_bgr[y1:y2, x1:x2]
+                        face_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+
+                # fallback to full frame
+                if face_gray is None:
+                    totals["fallback"] += 1
+                    face_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+                # resize & store
+                face_res = cv2.resize(face_gray, out_size, interpolation=cv2.INTER_AREA)
+                X.append(face_res.astype(np.uint8))
+                y.append(idx)
+
+            except Exception as e:
+                totals["errors"] += 1
+                print(f"  ! {fname}: {e}")
+
+    # ─── Save arrays ──────────────────────────────────────────────────────
+    print("\n--- Summary ---")
+    for k, v in totals.items():
+        print(f"{k:10s}: {v}")
+
+    X = np.array(X, dtype=np.uint8).reshape(-1, 1, 224, 224)
+    y = np.array(y, dtype=np.int64)
+    np.save(save_x, X)
+    np.save(save_y, y)
+    print(f"Saved {X.shape} → {save_x.name}")
+    print(f"Saved {y.shape} → {save_y.name}")
 
 
-print("Class distribution:")
-for label, count in label_counts.items():
-    print(f"{label:<10}: {count} samples")
-
-
-plt.bar(label_counts.keys(), label_counts.values())
-plt.title("Image Dataset Class Distribution")
-plt.ylabel("Number of Samples")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+if __name__ == "__main__":
+    main()

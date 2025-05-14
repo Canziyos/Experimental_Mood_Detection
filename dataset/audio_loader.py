@@ -17,16 +17,12 @@ class EmotionDataset(Dataset):
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
 
-
 def load_np_data(cfg: Config) -> Tuple[np.ndarray, np.ndarray]:
-    suffix = "aug" if cfg.mode == "augmented" else "aud"
-    x_path = cfg.data_dir / f"X_{suffix}.npy"
-    y_path = cfg.data_dir / f"y_{suffix}.npy"
-    return np.load(x_path, mmap_mode="r"), np.load(y_path, mmap_mode="r")
-
+    return np.load(cfg.x_aud_path, mmap_mode="r"), np.load(cfg.y_aud_path, mmap_mode="r")
 
 def make_loaders(cfg: Config):
     X, y = load_np_data(cfg)
+    print(f"Loaded audio data from: {cfg.x_aud_path.name}, shape: {X.shape}, mode: {cfg.aud_mode}")
 
     X_trainval, X_test, y_trainval, y_test = train_test_split(
         X, y, test_size=cfg.test_size, random_state=cfg.seed, stratify=y

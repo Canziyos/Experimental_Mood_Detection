@@ -11,7 +11,7 @@ class FusionAV(nn.Module):
                  learn_gate: bool = False):
         super().__init__()
 
-        assert 0.0 <= alpha <= 1.0, "α must be in [0,1]"
+        assert 0.0 <= alpha <= 1.0, "alpha must be in [0,1]"
         self.alpha = alpha
         self.fusion_mode = fusion_mode
         self.learn_gate = learn_gate
@@ -37,7 +37,7 @@ class FusionAV(nn.Module):
             probs = alpha * aud_probs + (1.0 - alpha) * vis_probs
         elif self.fusion_mode == "prod":
             probs = aud_probs * vis_probs
-            probs = probs / probs.sum(dim=1, keepdim=True)  # re‑norm
+            probs = probs / probs.sum(dim=1, keepdim=True)  # re‑norm.
         else:
             raise ValueError("fusion_mode must be 'avg' or 'prod'")
 
