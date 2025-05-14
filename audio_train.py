@@ -2,9 +2,9 @@ import argparse
 import torch
 from config import Config
 from data_loader import DataLoader
-from trainer import train
+from aud_trainer import train
 from evaluation import final_report
-from models.audio_model import AudioCNN1D
+from models.AudioCNN1D import AudioCNN1D
 
 
 def parse_args():
