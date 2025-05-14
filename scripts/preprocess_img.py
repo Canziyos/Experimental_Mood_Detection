@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-preprocess_img.py  – Create X_img.npy / y_img.npy for MobileNetV2 pipeline.
+preprocess_img.py: Create X_img.npy / y_img.npy for MobileNetV2 pipeline.
 
 • Walks dataset/images/<class_name> folders from Config.
 • Detects largest face with RetinaFace (InsightFace) by default; --mtcnn flag switches to MTCNN.
-• Handles RGB, grayscale, and 4‑channel (RGBA) source files.
+• Handles RGB, grayscale, and 4-channel (RGBA) source files.
 • Falls back to full frame if no face found.
-• Converts to grayscale, resizes to 224×224, saves uint8 [0‑255].
+• Converts to grayscale, resizes to 224*224, saves uint8 [0-255].
 """
 
 import argparse, os, cv2, numpy as np, torch
@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 from config import Config
 
-# -----------------------------------------------------------------------------
+# --------------------------------#
 def get_detector(use_mtcnn=False):
     if use_mtcnn:
         from facenet_pytorch import MTCNN
@@ -27,9 +27,9 @@ def get_detector(use_mtcnn=False):
         app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
         return app
 
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------#
 def ensure_bgr(img):
-    """Convert grayscale or BGRA images to 3‑channel BGR."""
+    """Convert grayscale or BGRA images to 3channel BGR."""
     if img is None:
         return None
     if img.ndim == 2:                         # H×W gray
@@ -38,7 +38,7 @@ def ensure_bgr(img):
         img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     return img
 
-# -----------------------------------------------------------------------------
+# --------#
 def main():
     argp = argparse.ArgumentParser()
     argp.add_argument("--mtcnn", action="store_true",
@@ -58,13 +58,13 @@ def main():
     X, y = [], []
     totals = dict(processed=0, detected=0, fallback=0, errors=0)
 
-    print("=== Pre‑processing ===")
+    print("=== Pre-processing ===")
     print(f"Src  : {img_dir}")
     print(f"Dst  : {save_x.name}, {save_y.name}")
     print(f"Size : {out_size}, detector={'MTCNN' if args.mtcnn else 'RetinaFace'}")
     print("----------------------")
 
-    # ─── Traverse folders ─────────────────────────────────────────────────
+    # -- Traverse folders --
     for cls, idx in label_map.items():
         folder: Path = img_dir / cls
         if not folder.is_dir():
@@ -84,11 +84,11 @@ def main():
                 if img_bgr is None:
                     raise ValueError("cv2.imread failed")
 
-                # ── Face detection ─────────────────────────────────────
+                # -- Face detection --
                 face_gray = None
                 if args.mtcnn:
                     pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-                    face = detector(pil)  # tensor or None
+                    face = detector(pil)  # tensor or None.
                     if face is not None:
                         totals["detected"] += 1
                         face_rgb = face.permute(1, 2, 0).cpu().numpy()
@@ -103,12 +103,12 @@ def main():
                         crop = img_bgr[y1:y2, x1:x2]
                         face_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-                # fallback to full frame
+                # fallback to full frame.
                 if face_gray is None:
                     totals["fallback"] += 1
                     face_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-                # resize & store
+                # resize & store.
                 face_res = cv2.resize(face_gray, out_size, interpolation=cv2.INTER_AREA)
                 X.append(face_res.astype(np.uint8))
                 y.append(idx)
@@ -117,7 +117,7 @@ def main():
                 totals["errors"] += 1
                 print(f"  ! {fname}: {e}")
 
-    # ─── Save arrays ──────────────────────────────────────────────────────
+    # -- Save arrays --
     print("\n--- Summary ---")
     for k, v in totals.items():
         print(f"{k:10s}: {v}")
