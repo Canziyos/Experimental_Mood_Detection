@@ -1,48 +1,33 @@
-# models/fusion_av.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.AudioCNN1D import AudioCNN1D
-from models.ImageCNN2D import MobileNetV2Encap
-
 
 class FusionAV(nn.Module):
     """
-    Late-fusion wrapper around an AudioCNN1D + MobileNetV2Encap.
-
-    fusion_mode, so far, {"avg", "prod", "gate", "mlp", "latent"}
-        avg: arth mean with fixed alpha.
-        prod: geo mean (re-normalised).
-        gate: learn a per-sample scalar aplha via a sigmoid gate.
-        mlp: deep late fusion: MLP on concatenated logits/probs.
-        latent: vector representation of the penultimate
+    Late fusion module combining audio + image branches.
+    Supported fusion modes:
+        - "avg"  : weighted average of probs..
+        - "prod" : geometric mean (re-normalized).
+        - "gate" : learn scalar alpha per sample.
+        - "mlp"  : on concatenated probs or pre-softmax scores.
+        - "latent": Linear head on concatenated latent vectors.
     """
 
     def __init__(self,
                  num_classes: int = 6,
-                 alpha: float = 0.5,
                  fusion_mode: str = "avg",
-                 use_softmax: bool = True,         # if False, feed probs to gate/mlp.
-                 hidden: int = 128,               # size for MLP.
-                 cfg=None):
+                 alpha: float = 0.5,
+                 use_pre_softmax: bool = False,  # whether to use pre-softmax scores.
+                 mlp_hidden_dim: int = 128,
+                 latent_dim_audio: int = 512,
+                 latent_dim_image: int = 128):
         super().__init__()
 
-        assert fusion_mode in {"avg", "prod", "gate", "mlp", "latent"}
+        assert fusion_mode in {"avg", "prod", "gate", "mlp", "latent"}, "Invalid fusion mode."
         self.fusion_mode = fusion_mode
         self.alpha = alpha
-        self.use_softmax = use_softmax
+        self.use_pre_softmax = use_pre_softmax
 
-        # branches #
-        if cfg is not None:                      # Config passthrough
-            self.audio_branch = AudioCNN1D(cfg.input_channels,
-                                           cfg.input_length, num_classes)
-        else:
-            self.audio_branch = AudioCNN1D(n_classes=num_classes)
-        self.visual_branch = MobileNetV2Encap(pretrained=False,
-                                              freeze_backbone=False,
-                                              n_classes=num_classes)
-
-        # learnable heads #
         if fusion_mode == "gate":
             in_dim = 2 * num_classes
             self.gate_fc = nn.Linear(in_dim, 1)
@@ -50,42 +35,54 @@ class FusionAV(nn.Module):
         elif fusion_mode == "mlp":
             in_dim = 2 * num_classes
             self.mlp_head = nn.Sequential(
-                nn.Linear(in_dim, hidden),
+                nn.Linear(in_dim, mlp_hidden_dim),
                 nn.ReLU(inplace=True),
                 nn.Dropout(0.3),
-                nn.Linear(hidden, num_classes)
+                nn.Linear(mlp_hidden_dim, num_classes)
             )
 
-    # -------------------------------------------------------------------------#
-    def fuse_probs(self, p_a, p_v, a_logits=None, v_logits=None):
-        """Return fused probability tensor (B, C) according to selected mode."""
+        elif fusion_mode == "latent":
+            in_dim = latent_dim_audio + latent_dim_image
+            self.latent_fc = nn.Linear(in_dim, num_classes)
+
+    # -------------#
+    def fuse_probs(
+        self,
+        probs_audio: torch.Tensor,
+        probs_image: torch.Tensor,
+        pre_softmax_audio: torch.Tensor = None,
+        pre_softmax_image: torch.Tensor = None,
+        latent_audio: torch.Tensor = None,
+        latent_image: torch.Tensor = None
+    ) -> torch.Tensor:
+        """
+        Fuses the inputs into final softmax probabilities over emotion classes.
+        """
         if self.fusion_mode == "avg":
-            return self.alpha * p_a + (1 - self.alpha) * p_v
+            return self.alpha * probs_audio + (1 - self.alpha) * probs_image
 
-        if self.fusion_mode == "prod":
-            prod = p_a * p_v
-            return prod / prod.sum(dim=1, keepdim=True)  # re‑normalise.
+        elif self.fusion_mode == "prod":
+            prod = probs_audio * probs_image
+            return prod / prod.sum(dim=1, keepdim=True)
 
-        if self.fusion_mode == "gate":
-            feats = torch.cat([a_logits, v_logits], dim=1) if self.use_logits \
-                    else torch.cat([p_a, p_v], dim=1)
-            alpha = torch.sigmoid(self.gate_fc(feats))        # (B,1)
-            return alpha * p_a + (1 - alpha) * p_v
+        elif self.fusion_mode == "gate":
+            assert pre_softmax_audio is not None and pre_softmax_image is not None or not self.use_pre_softmax, \
+                "Gate fusion requires pre-softmax inputs if use_pre_softmax is True."
+            x = torch.cat([pre_softmax_audio, pre_softmax_image], dim=1) if self.use_pre_softmax \
+                else torch.cat([probs_audio, probs_image], dim=1)
+            alpha = torch.sigmoid(self.gate_fc(x))  # (B,1).
+            return alpha * probs_audio + (1 - alpha) * probs_image
 
-        if self.fusion_mode == "mlp":
-            feats = torch.cat([a_logits, v_logits], dim=1) if self.use_logits \
-                    else torch.cat([p_a, p_v], dim=1)
-            return torch.softmax(self.mlp_head(feats), dim=1)
+        elif self.fusion_mode == "mlp":
+            assert pre_softmax_audio is not None and pre_softmax_image is not None or not self.use_pre_softmax, \
+                "MLP fusion requires pre-softmax inputs if use_pre_softmax is True."
+            x = torch.cat([pre_softmax_audio, pre_softmax_image], dim=1) if self.use_pre_softmax \
+                else torch.cat([probs_audio, probs_image], dim=1)
+            return torch.softmax(self.mlp_head(x), dim=1)
 
-        raise ValueError("Unsupported fusion_mode")
+        elif self.fusion_mode == "latent":
+            assert latent_audio is not None and latent_image is not None, "Latent fusion requires both latent vectors."
+            x = torch.cat([latent_audio, latent_image], dim=1)
+            return torch.softmax(self.latent_fc(x), dim=1)
 
-    # ---------------------------------------------------------------#
-    def forward(self, audio_x: torch.Tensor, visual_x: torch.Tensor):
-        a_logits = self.audio_branch(audio_x)     # (B,C).
-        v_logits = self.visual_branch(visual_x)   # (B,C).
-
-        p_a = F.softmax(a_logits, dim=1)
-        p_v = F.softmax(v_logits, dim=1)
-
-        fused = self.fuse_probs(p_a, p_v, a_logits, v_logits)
-        return fused
+        raise ValueError(f"Unsupported fusion mode: {self.fusion_mode}")
