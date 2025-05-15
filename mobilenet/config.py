@@ -1,23 +1,10 @@
-from dataclasses import dataclass, field
-from pathlib import Path
-
 @dataclass
 class Config:
-    aud_mode: str = "augmented"  # "augmented" or "clean"
-    img_mode: str = "img"        # "img", "rgb", etc.
-
-    num_workers: int =2          # number of cpu threads for data loading (decreased because of RAM)
-
-    project_root: Path = field(init=False)
-    data_dir: Path = field(init=False)
-    checkpoint_dir: Path = field(init=False)
-    image_dir: Path = field(init=False)
-    audio_dir: Path = field(init=False)
+    aud_mode: str = "augmented"
+    img_mode: str = "img"
+    num_workers: int = 2
 
     test_size: float = 0.07
-    n_mels: int = 64
-    logmel_h int = 96
-    logmel_w: int = 196
     val_size: float = 0.10
     batch_size: int = 32
     num_epochs: int = 15
@@ -26,9 +13,19 @@ class Config:
     gamma: float = 0.5
     seed: int = 42
 
+    n_mels: int = 64
+    logmel_h: int = 96
+    logmel_w: int = 192
+
     class_names: tuple[str, ...] = (
         "Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad"
     )
+
+    project_root: Path = field(init=False)
+    data_dir: Path = field(init=False)
+    checkpoint_dir: Path = field(init=False)
+    image_dir: Path = field(init=False)
+    audio_dir: Path = field(init=False)
 
     def __post_init__(self):
         self.project_root = Path(__file__).resolve().parent
@@ -54,4 +51,3 @@ class Config:
     def y_aud_path(self) -> Path:
         suffix = "aug" if self.aud_mode == "augmented" else "aud"
         return self.data_dir / f"y_{suffix}.npy"
-
