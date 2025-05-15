@@ -211,4 +211,6 @@ processed_data/logits_image_*.pt
 models/ImageCNN2D.py
 img_train.py
 img_trainer.py
+img_infer.py
 dataset/img_loader.py
+rt_infer.py
