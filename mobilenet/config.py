@@ -14,7 +14,10 @@ class Config:
     image_dir: Path = field(init=False)
     audio_dir: Path = field(init=False)
 
-    test_size: float = 7
+    test_size: float = 0.07
+    n_mels: int = 64
+    logmel_h int = 96
+    logmel_w: int = 196
     val_size: float = 0.10
     batch_size: int = 32
     num_epochs: int = 15
@@ -22,9 +25,6 @@ class Config:
     step_size: int = 5
     gamma: float = 0.5
     seed: int = 42
-
-    input_channels: int = 15
-    input_length: int = 300
 
     class_names: tuple[str, ...] = (
         "Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad"

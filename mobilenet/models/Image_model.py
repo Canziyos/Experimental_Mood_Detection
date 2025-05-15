@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
 
 
-class MobileNetV2Encap(nn.Module):
+class ImageMobileNetV2(nn.Module):
     """
     MobileNetV2 -> 128D embedding → 6class logits.
     extract_features(x) returns (B, 128) for fusion later.

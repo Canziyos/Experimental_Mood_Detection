@@ -3,7 +3,7 @@ from config import Config
 from dataset.img_loader import make_image_loaders
 from img_trainer import train
 from evaluation import final_report
-from models.ImageCNN2D import MobileNetV2Encap
+from models.image_model import ImageMobileNetV2
 
 
 def parse_args():
