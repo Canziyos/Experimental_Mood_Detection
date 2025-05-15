@@ -2,11 +2,11 @@
 """
 preprocess_img.py: Create X_img.npy / y_img.npy for MobileNetV2 pipeline (RGB version).
 
-• Walks dataset/images/<class_name> folders from Config.
-• Detects largest face with RetinaFace (InsightFace) by default; --mtcnn flag switches to MTCNN.
-• Handles RGB, grayscale, and 4-channel (RGBA) source files.
-• Falls back to full frame if no face found.
-• Converts to RGB, resizes to 224×224, saves uint8 [0-255].
+- Walks dataset/images/<class_name> folders from Config.
+- Detects largest face with RetinaFace (InsightFace) by default; --mtcnn flag switches to MTCNN.
+- Handles RGB, grayscale, and 4-channel (RGBA) source files.
+- Falls back to full frame if no face found.
+- Converts to RGB, resizes to 224*224, saves uint8 [0-255].
 """
 
 import argparse, os, cv2, numpy as np, torch
@@ -70,7 +70,7 @@ def main():
             print(f"[WARN] missing folder {folder}")
             continue
 
-        print(f"* {cls:7s} → label {idx}")
+        print(f"* {cls:7s} --> label {idx}")
         for fname in os.listdir(folder):
             if not fname.lower().endswith((".png", ".jpg", ".jpeg")):
                 continue
@@ -119,8 +119,8 @@ def main():
     y = np.array(y, dtype=np.int64)
     np.save(save_x, X)
     np.save(save_y, y)
-    print(f"Saved {X.shape} → {save_x.name}")
-    print(f"Saved {y.shape} → {save_y.name}")
+    print(f"Saved {X.shape} --> {save_x.name}")
+    print(f"Saved {y.shape} --> {save_y.name}")
 
 
 if __name__ == "__main__":

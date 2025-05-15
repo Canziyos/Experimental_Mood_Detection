@@ -5,7 +5,7 @@ from torchvision.models import mobilenet_v2, MobileNet_V2_Weights
 
 class MobileNetV2Encap(nn.Module):
     """
-    Grayscale MobileNetV2 → 128‑D embedding → 6‑class logits.
+    MobileNetV2 -> 128D embedding → 6class logits.
     extract_features(x) returns (B, 128) for fusion later.
     """
     def __init__(self, n_classes=6, embedding_dim=128,
@@ -29,7 +29,7 @@ class MobileNetV2Encap(nn.Module):
             for p in net.features.parameters():
                 p.requires_grad = False
 
-        self.backbone = net.features              # (B, 1280, 7, 7) for 224×224
+        self.backbone = net.features              # (B, 1280, 7, 7) for 224×224.
         self.pool     = nn.AdaptiveAvgPool2d((1, 1))
         self.embed    = nn.Linear(1280, embedding_dim)
         self.act      = nn.ReLU(inplace=True)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-video_infer.py: End‑to‑end demo: video -> (image logits, audio logits, fusion).
+video_infer.py: End-to-end demo: video -> (image logits, audio logits, fusion).
 
 Note-:
     pip install opencv-python moviepy librosa soundfile torchvision torchaudio.
@@ -54,8 +54,8 @@ def audio_to_windows(audio_path: Path,
                      win_sec: float = 3.0,
                      sr: int = 16000) -> torch.Tensor:
     """
-    3‑second window --> 300 time‑steps with 15 dims each (fake).
-    will be replaced with actual 15×300 feature extractor.
+    3-second window --> 300 time-steps with 15 dims each (fake).
+    will be replaced with actual 15*300 feature extractor.
     """
     wav, file_sr = sf.read(audio_path)
     if file_sr != sr:
