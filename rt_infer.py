@@ -1,145 +1,156 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-video_infer.py: End-to-end demo: video -> (image logits, audio logits, fusion).
+Real-time multimodal emotion inference.
 
-Note-:
-    pip install opencv-python moviepy librosa soundfile torchvision torchaudio.
+  python rt_infer.py --ckpt_img checkpoints/mobilenet_img.pth \
+                     --ckpt_aud checkpoints/mobilenet_aud.pth \
+                     --ckpt_fusion checkpoints/fusion_latent.pth
 """
 
-import argparse, cv2, os, torch, numpy as np
+import argparse, time, threading, queue, signal, cv2, torch, numpy as np, sounddevice as sd, torchaudio
 import torchvision.transforms as T
-import librosa, soundfile as sf
-from moviepy.editor import VideoFileClip
 from pathlib import Path
-from typing import List
+from insightface.app import FaceAnalysis
 
 from models.mobilenet_v2_embed import MobileNetV2Encap
-from models.audio_cnn1d import AudioCNN1D
+from models.mobilenet_v2_audio import MobileNetV2Audio      # <- MobileNetV2Encap with in_ch=1
+from models.FusionAV import FusionAV
 from config import Config
 
-# -- Face detector (same as preprocess_img) --
-from insightface.app import FaceAnalysis
-_det = None
-def crop_face(frame_bgr):
-    global _det
-    if _det is None:
-        _det = FaceAnalysis(name="buffalo_l",
-                            providers=['CPUExecutionProvider'])
-        _det.prepare(ctx_id=-1)
-    faces = _det.get(frame_bgr)
-    if not faces:
-        return None
-    face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]))
-    x1,y1,x2,y2 = map(int, face.bbox)
-    return frame_bgr[y1:y2, x1:x2]
+# ------------------------------------------------------------------ #
+# Audio preprocessing
+_mel = torchaudio.transforms.MelSpectrogram(
+        sample_rate=16_000, n_fft=512, hop_length=160,
+        n_mels=64, f_min=50, f_max=8000)
 
-# -- Image preprocessing --
-_tx_eval = T.Compose([
+def wav_to_logmel(wav: torch.Tensor) -> torch.Tensor:
+    mel = _mel(wav)
+    logmel = torch.log1p(mel)                        # (64,T)
+    if logmel.size(1) < 200:
+        logmel = torch.nn.functional.pad(logmel, (0, 200-logmel.size(1)))
+    logmel = logmel[:, :200]                         # (64,200)
+    logmel = torch.nn.functional.interpolate(
+                logmel.unsqueeze(0), size=(96,192), mode="bilinear", align_corners=False)
+    return logmel.unsqueeze(0)                       # (1,1,96,192)
+
+# ------------------------------------------------------------------ #
+# Face detector with caching
+_det = FaceAnalysis(name="buffalo_l", providers=['CUDAExecutionProvider'])
+_det.prepare(ctx_id=0)
+_prev_box, _miss = None, 0
+
+def crop_face(frame_bgr):
+    global _prev_box, _miss
+    h, w = frame_bgr.shape[:2]
+    if _prev_box is not None and _miss < 10:
+        x1,y1,x2,y2 = _prev_box
+        pad = 20
+        x1,y1 = max(0,x1-pad), max(0,y1-pad)
+        x2,y2 = min(w,x2+pad), min(h,y2+pad)
+        roi = frame_bgr[y1:y2, x1:x2]
+        if roi.size:
+            _miss += 1
+            return roi
+    faces = _det.get(frame_bgr)
+    if faces:
+        face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]))
+        _prev_box = list(map(int, face.bbox))
+        _miss = 0
+        x1,y1,x2,y2 = _prev_box
+        return frame_bgr[y1:y2, x1:x2]
+    return frame_bgr
+
+_tx_img = T.Compose([
     T.ToPILImage(),
     T.Resize(224),
     T.ToTensor(),
     T.Normalize(mean=[0.5], std=[0.5]),
 ])
 
-def frames_to_tensors(frames_bgr: List[np.ndarray]) -> torch.Tensor:
-    imgs = []
-    for bgr in frames_bgr:
-        crop = crop_face(bgr) or bgr
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        imgs.append(_tx_eval(gray))
-    return torch.stack(imgs)   # (N,1,224,224)
-
-# -- Audio feature extractor (placeholder) --
-def audio_to_windows(audio_path: Path,
-                     win_sec: float = 3.0,
-                     sr: int = 16000) -> torch.Tensor:
-    """
-    3-second window --> 300 time-steps with 15 dims each (fake).
-    will be replaced with actual 15*300 feature extractor.
-    """
-    wav, file_sr = sf.read(audio_path)
-    if file_sr != sr:
-        wav = librosa.resample(wav, file_sr, sr)
-    win_len = int(sr * win_sec)
-    feats = []
-    for i in range(0, len(wav) - win_len + 1, win_len):
-        seg = wav[i:i+win_len]
-        # TODO: real feature extractor here.
-        mel = librosa.feature.melspectrogram(seg, sr=sr, n_mels=15,
-                                             hop_length=win_len//300,
-                                             n_fft=512)          # (15, 300)
-        feats.append(mel.astype(np.float32))
-    return torch.tensor(np.stack(feats))   # (N,15,300)
-
-# -- Aggregation helpers --
-def mean_softmax(logits):
-    probs = torch.softmax(logits, dim=1)
-    return probs.mean(0)                   # (6,)
-
-def majority_vote(preds):
-    vals, counts = torch.unique(preds, return_counts=True)
-    return vals[counts.argmax()].item()
-
-# --Main routine--
+# ------------------------------------------------------------------ #
 def main():
     argp = argparse.ArgumentParser()
-    argp.add_argument("video", help="Path to video (with audio track)")
-    argp.add_argument("--ckpt_img", required=True, help="MobileNet .pth")
-    argp.add_argument("--ckpt_aud", required=True, help="AudioCNN1D .pth")
+    argp.add_argument("--ckpt_img", required=True)
+    argp.add_argument("--ckpt_aud", required=True)
+    argp.add_argument("--ckpt_fusion", required=True)
     args = argp.parse_args()
 
     cfg = Config()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load models
-    img_model = MobileNetV2Encap(pretrained=False).to(device)
-    img_model.load_state_dict(torch.load(args.ckpt_img, map_location=device))
-    img_model.eval()
+    img_net = MobileNetV2Encap(pretrained=False).to(device).eval()
+    img_net.load_state_dict(torch.load(args.ckpt_img, map_location=device))
+    aud_net = MobileNetV2Audio().to(device).eval()
+    aud_net.load_state_dict(torch.load(args.ckpt_aud, map_location=device))
 
-    aud_model = AudioCNN1D(cfg.input_channels, cfg.input_length).to(device)
-    aud_model.load_state_dict(torch.load(args.ckpt_aud, map_location=device))
-    aud_model.eval()
+    fusion = FusionAV(num_classes=len(cfg.class_names),
+                      fusion_mode="latent",
+                      latent_dim_audio=128,
+                      latent_dim_image=128).to(device).eval()
+    fusion.load_state_dict(torch.load(args.ckpt_fusion, map_location=device))
 
-    # --- Extract frames & audio ---
-    clip = VideoFileClip(args.video)
-    frames = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
-              for f in clip.iter_frames(fps=2)]      # 2 FPS sampling.
-    audio_tmp = Path("tmp_audio.wav")
-    clip.audio.write_audiofile(audio_tmp.as_posix(),
-                               fps=16000, verbose=False, logger=None)
+    # ------------------------------------------------------------------ #
+    # Audio thread
+    audio_q: queue.Queue = queue.Queue(maxsize=4)
+    buf = np.zeros(16_000*2, dtype=np.float32)       # 2 s ring buffer
 
-    # Image branch --
-    img_batch = frames_to_tensors(frames).to(device)         # (N,1,224,224)
-    with torch.no_grad():
-        img_logits  = img_model(img_batch)
-        img_latent  = img_model.extract_features(img_batch).mean(0)   # (128,)
-    img_prob   = mean_softmax(img_logits)
-    img_pred   = img_prob.argmax().item()
+    def audio_loop():
+        with sd.InputStream(channels=1, samplerate=16_000, blocksize=1600) as stream:
+            while running.is_set():
+                block, _ = stream.read(1600)
+                np.roll(buf, -1600); buf[-1600:] = block[:,0]
+                if stream.time < 2.0:
+                    continue
+                wav = torch.tensor(buf.copy(), dtype=torch.float32, device=device)
+                with torch.inference_mode(), torch.cuda.amp.autocast():
+                    spec = wav_to_logmel(wav).to(device, non_blocking=True)
+                    a_vec = aud_net.extract_features(spec)
+                    a_prob = torch.softmax(aud_net(spec), 1)
+                try:
+                    audio_q.put_nowait((a_vec, a_prob))
+                except queue.Full:
+                    pass
 
-    # Audio branch --
-    aud_batch = audio_to_windows(audio_tmp).to(device)       # (M,15,300)
-    with torch.no_grad():
-        aud_logits = aud_model(aud_batch)
-        aud_latent = aud_model.extract_latent_vector(aud_batch).mean(0) # (512,)
-    aud_prob  = mean_softmax(aud_logits)
-    aud_pred  = aud_prob.argmax().item()
+    # ------------------------------------------------------------------ #
+    # Start threads and video capture
+    running = threading.Event(); running.set()
+    th = threading.Thread(target=audio_loop, daemon=True); th.start()
+    cap = cv2.VideoCapture(0)
 
-    # Early‑fusion example --
-    fused_vec = torch.cat([img_latent, aud_latent], dim=0)   # (640,)
-    # Simple logistic fusion (learn this offline):
-    fusion_w = torch.randn(6, 640) * 0.01
-    fusion_b = torch.zeros(6)
-    fuse_logits = F.linear(fused_vec.unsqueeze(0), fusion_w, fusion_b)
-    fuse_pred = fuse_logits.argmax(1).item()
+    def sig_handler(sig, frame):     # graceful Ctrl-C
+        running.clear()
+    signal.signal(signal.SIGINT, sig_handler)
 
-    # --- Output ---
-    names = cfg.class_names
-    print(f"Image branch -> {names[img_pred]} (p={img_prob[img_pred]:.2f})")
-    print(f"Audio branch -> {names[aud_pred]} (p={aud_prob[aud_pred]:.2f})")
-    print(f"Fusion       -> {names[fuse_pred]}  (toy FC weights)")
+    print("Press Ctrl-C to stop.")
+    while running.is_set():
+        ok, frame = cap.read()
+        if not ok:
+            break
+        t0 = time.time()
+        crop = crop_face(frame)
+        img_t = _tx_img(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)).unsqueeze(0).to(device, non_blocking=True)
+        with torch.inference_mode(), torch.cuda.amp.autocast():
+            v_vec = img_net.extract_features(img_t)
+            v_prob = torch.softmax(img_net(img_t), 1)
 
-    # cleanup tmp
-    audio_tmp.unlink()
+        # get most recent audio packet
+        try:
+            while audio_q.qsize() > 1:
+                audio_q.get_nowait()
+            a_vec, a_prob = audio_q.get_nowait()
+        except queue.Empty:
+            continue
+
+        with torch.inference_mode():
+            fused = fusion.fuse_probs(probs_audio=a_prob,
+                                       probs_image=v_prob,
+                                       latent_audio=a_vec,
+                                       latent_image=v_vec)
+        cls = fused.argmax(1).item()
+        print(f"{cfg.class_names[cls]:7s}  {(time.time()-t0)*1e3:5.1f} ms")
+
+    cap.release()
 
 if __name__ == "__main__":
     main()

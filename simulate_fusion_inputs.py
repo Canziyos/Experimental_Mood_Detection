@@ -55,7 +55,7 @@ def simulate_fusion_inputs(batch_size=32, num_classes=6,
     latent_audio = np.random.randn(batch_size, latent_audio_dim).astype(np.float32)
     latent_image = np.random.randn(batch_size, latent_image_dim).astype(np.float32)
 
-    # --- Ground truth---
+    # --- Ground truth --
     # Simulated class labels; skewed on purpose to make things interesting.
     y_true = np.random.choice(num_classes, size=batch_size,
                               p=[0.1, 0.1, 0.2, 0.3, 0.2, 0.1])

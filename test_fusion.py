@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from models.FusionAV import FusionAV
 
+
 # === Load simulated data ===
 data = "fake_data"
 probs_audio   = torch.tensor(np.load(f"{data}/probs_audio.npy"))

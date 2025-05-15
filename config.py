@@ -6,6 +6,8 @@ class Config:
     aud_mode: str = "augmented"  # "augmented" or "clean"
     img_mode: str = "img"        # "img", "rgb", etc.
 
+    num_workers: int =2          # number of cpu threads for data loading (decreased because of RAM)
+
     project_root: Path = field(init=False)
     data_dir: Path = field(init=False)
     checkpoint_dir: Path = field(init=False)
@@ -52,3 +54,4 @@ class Config:
     def y_aud_path(self) -> Path:
         suffix = "aug" if self.aud_mode == "augmented" else "aud"
         return self.data_dir / f"y_{suffix}.npy"
+

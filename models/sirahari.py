@@ -32,7 +32,7 @@ class AudioCNN1D(nn.Module):
         self.dropout = nn.Dropout(0.3)
         self.fc2 = nn.Linear(512, n_classes)
 
-    # ------------------------------------------------------------------
+    # --------------------------------------------------------------#
     def extract_latent_vector(self, x: torch.Tensor) -> torch.Tensor:
         x = self.bn1(F.relu(self.conv1(x)))
         x = self.bn2(F.relu(self.conv2(x)))
@@ -44,7 +44,7 @@ class AudioCNN1D(nn.Module):
         x = self.dropout(F.relu(self.fc1(x)))
         return x                           # (B, 512)
 
-    # ------------------------------------------------------------------
+    # -------------------------------------------------#
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.extract_latent_vector(x)
-        return self.fc2(x)                 # (B, n_classes)
+        return self.fc2(x)               # (B, n_classes).
