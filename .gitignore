@@ -199,3 +199,16 @@ data/Audio/
 # Ignore logs
 *.log
 logs/
+debug_outputs/
+
+
+checkpoints/image_cnn2d_*.pth
+checkpoints/classification_report_img*.txt
+checkpoints/classification_report_rgb*.txt
+checkpoints/cm_img*.png
+checkpoints/cm_rgb*.png
+processed_data/logits_image_*.pt
+models/ImageCNN2D.py
+img_train.py
+img_trainer.py
+dataset/img_loader.py
