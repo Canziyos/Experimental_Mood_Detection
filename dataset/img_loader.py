@@ -6,26 +6,24 @@ from sklearn.model_selection import train_test_split
 from typing import Dict, Tuple
 from config import Config
 
-# -- Transform pipelines --
 _tx_train = T.Compose([
-    T.ToPILImage(),                        # expects H×W or H×W×C.
-    T.RandomHorizontalFlip(0.5),           # mirror.
-    T.RandomRotation(10, fill=0),          # ±10 degrees.
+    T.ToPILImage(),
+    T.RandomHorizontalFlip(0.5),
+    T.RandomRotation(10, fill=0),
     T.RandomResizedCrop(224, scale=(0.90, 1.05), ratio=(0.9, 1.1)),
     T.ColorJitter(brightness=0.2, contrast=0.2),
-    T.ToTensor(),                          # --> 0‑1 float, C×H×W.
+    T.ToTensor(),
     T.RandomErasing(p=0.25, scale=(0.02, 0.06), ratio=(0.3, 3.3)),
-    T.Normalize(mean=[0.5], std=[0.5]),
+    T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
 ])
 
 _tx_eval = T.Compose([
     T.ToPILImage(),
-    T.Resize(224),                         # shortest side.
+    T.Resize(224),
     T.ToTensor(),
-    T.Normalize(mean=[0.5], std=[0.5]),
+    T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
 ])
 
-# -- Dataset class --
 class ImageEmotionDataset(Dataset):
     def __init__(self, X: np.ndarray, y: np.ndarray, transform):
         self.X, self.y, self.tf = X, y, transform
@@ -34,21 +32,19 @@ class ImageEmotionDataset(Dataset):
         return len(self.y)
 
     def __getitem__(self, idx):
-        img = self.X[idx]                  # uint8 (1,224,224) or (224,224).
+        img = self.X[idx]
         if img.ndim == 3 and img.shape[0] == 1:
-            img = img.squeeze(0)           # → (H,W) for ToPILImage.
+            img = np.repeat(img, 3, axis=0)
         img = self.tf(img)
         label = torch.tensor(self.y[idx], dtype=torch.long)
         return img, label
 
-# -- Disk I/O helpers --
 def load_img_data(cfg: Config) -> Tuple[np.ndarray, np.ndarray]:
     return (
         np.load(cfg.x_img_path, mmap_mode="r"),
         np.load(cfg.y_img_path, mmap_mode="r"),
     )
 
-# -- Public factory --
 def make_image_loaders(cfg: Config) -> Dict[str, DataLoader]:
     X, y = load_img_data(cfg)
     print(f"Loaded {X.shape} - mode={cfg.img_mode}")

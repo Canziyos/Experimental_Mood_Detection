@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-preprocess_img.py: Create X_img.npy / y_img.npy for MobileNetV2 pipeline.
+preprocess_img.py: Create X_img.npy / y_img.npy for MobileNetV2 pipeline (RGB version).
 
 • Walks dataset/images/<class_name> folders from Config.
 • Detects largest face with RetinaFace (InsightFace) by default; --mtcnn flag switches to MTCNN.
 • Handles RGB, grayscale, and 4-channel (RGBA) source files.
 • Falls back to full frame if no face found.
-• Converts to grayscale, resizes to 224*224, saves uint8 [0-255].
+• Converts to RGB, resizes to 224×224, saves uint8 [0-255].
 """
 
 import argparse, os, cv2, numpy as np, torch
@@ -32,9 +32,9 @@ def ensure_bgr(img):
     """Convert grayscale or BGRA images to 3channel BGR."""
     if img is None:
         return None
-    if img.ndim == 2:                         # H×W gray
+    if img.ndim == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    elif img.shape[2] == 4:                   # H×W×4 BGRA
+    elif img.shape[2] == 4:
         img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
     return img
 
@@ -58,13 +58,12 @@ def main():
     X, y = [], []
     totals = dict(processed=0, detected=0, fallback=0, errors=0)
 
-    print("=== Pre-processing ===")
+    print("=== Pre-processing (RGB mode) ===")
     print(f"Src  : {img_dir}")
     print(f"Dst  : {save_x.name}, {save_y.name}")
     print(f"Size : {out_size}, detector={'MTCNN' if args.mtcnn else 'RetinaFace'}")
     print("----------------------")
 
-    # -- Traverse folders --
     for cls, idx in label_map.items():
         folder: Path = img_dir / cls
         if not folder.is_dir():
@@ -84,45 +83,39 @@ def main():
                 if img_bgr is None:
                     raise ValueError("cv2.imread failed")
 
-                # -- Face detection --
-                face_gray = None
+                face_rgb = None
                 if args.mtcnn:
                     pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-                    face = detector(pil)  # tensor or None.
+                    face = detector(pil)
                     if face is not None:
                         totals["detected"] += 1
                         face_rgb = face.permute(1, 2, 0).cpu().numpy()
-                        face_gray = cv2.cvtColor(face_rgb, cv2.COLOR_RGB2GRAY)
                 else:
                     faces = detector.get(img_bgr)
                     if faces:
                         totals["detected"] += 1
-                        # choose largest face
                         face = max(faces, key=lambda x: (x.bbox[2]-x.bbox[0])*(x.bbox[3]-x.bbox[1]))
                         x1, y1, x2, y2 = map(int, face.bbox)
                         crop = img_bgr[y1:y2, x1:x2]
-                        face_gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                        face_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
 
-                # fallback to full frame.
-                if face_gray is None:
+                if face_rgb is None:
                     totals["fallback"] += 1
-                    face_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                    face_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-                # resize & store.
-                face_res = cv2.resize(face_gray, out_size, interpolation=cv2.INTER_AREA)
-                X.append(face_res.astype(np.uint8))
+                face_resized = cv2.resize(face_rgb, out_size, interpolation=cv2.INTER_AREA)
+                X.append(face_resized.astype(np.uint8))
                 y.append(idx)
 
             except Exception as e:
                 totals["errors"] += 1
                 print(f"  ! {fname}: {e}")
 
-    # -- Save arrays --
     print("\n--- Summary ---")
     for k, v in totals.items():
         print(f"{k:10s}: {v}")
 
-    X = np.array(X, dtype=np.uint8).reshape(-1, 1, 224, 224)
+    X = np.array(X, dtype=np.uint8).transpose(0, 3, 1, 2)  # (N,3,224,224)
     y = np.array(y, dtype=np.int64)
     np.save(save_x, X)
     np.save(save_y, y)

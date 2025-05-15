@@ -15,15 +15,15 @@ class MobileNetV2Encap(nn.Module):
         weights = MobileNet_V2_Weights.IMAGENET1K_V1 if pretrained else None
         net = mobilenet_v2(weights=weights)
 
-        # patch first conv: 3‑ch → 1‑ch
-        first = net.features[0][0]
-        net.features[0][0] = nn.Conv2d(
-            1, first.out_channels,
-            kernel_size=first.kernel_size,
-            stride=first.stride,
-            padding=first.padding,
-            bias=False,
-        )
+        # # patch first conv: 3‑ch → 1‑ch
+        # first = net.features[0][0]
+        # net.features[0][0] = nn.Conv2d(
+        #     1, first.out_channels,
+        #     kernel_size=first.kernel_size,
+        #     stride=first.stride,
+        #     padding=first.padding,
+        #     bias=False,
+        # )
 
         if freeze_backbone:
             for p in net.features.parameters():

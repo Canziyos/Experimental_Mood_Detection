@@ -2,34 +2,35 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.audio_cnn1d import AudioCNN1D
-from models.mobilenet_v2_embed import MobileNetV2Encap
+from models.AudioCNN1D import AudioCNN1D
+from models.ImageCNN2D import MobileNetV2Encap
 
 
 class FusionAV(nn.Module):
     """
     Late-fusion wrapper around an AudioCNN1D + MobileNetV2Encap.
 
-    fusion_mode ∈ {"avg", "prod", "gate", "mlp"}
+    fusion_mode, so far, {"avg", "prod", "gate", "mlp", "latent"}
         avg: arth mean with fixed alpha.
         prod: geo mean (re-normalised).
         gate: learn a per-sample scalar aplha via a sigmoid gate.
         mlp: deep late fusion: MLP on concatenated logits/probs.
+        latent: vector representation of the penultimate
     """
 
     def __init__(self,
                  num_classes: int = 6,
                  alpha: float = 0.5,
                  fusion_mode: str = "avg",
-                 use_logits: bool = True,         # if False, feed probs to gate/mlp.
+                 use_softmax: bool = True,         # if False, feed probs to gate/mlp.
                  hidden: int = 128,               # size for MLP.
                  cfg=None):
         super().__init__()
 
-        assert fusion_mode in {"avg", "prod", "gate", "mlp"}
+        assert fusion_mode in {"avg", "prod", "gate", "mlp", "latent"}
         self.fusion_mode = fusion_mode
         self.alpha = alpha
-        self.use_logits = use_logits
+        self.use_softmax = use_softmax
 
         # branches #
         if cfg is not None:                      # Config passthrough
