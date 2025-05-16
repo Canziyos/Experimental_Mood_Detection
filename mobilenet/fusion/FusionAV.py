@@ -13,6 +13,25 @@ class FusionAV(nn.Module):
         - "latent": Linear head on concatenated latent vectors.
     """
 
+    def __init__(self
+                num_classes: int =6
+                fusion_mode: str = "avg"
+                alpha: float = 0.5
+                )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def __init__(self,
                  num_classes: int = 6,
                  fusion_mode: str = "avg",

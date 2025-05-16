@@ -1,10 +1,10 @@
 import numpy as np
 import torch
-from models.FusionAV import FusionAV
+from mobilenet.fusion.FusionAV import FusionAV
 
 
 # === Load simulated data ===
-data = "fake_data"
+data = "mobilenet/fusion/fake_data"
 probs_audio   = torch.tensor(np.load(f"{data}/probs_audio.npy"))
 probs_image   = torch.tensor(np.load(f"{data}/probs_image.npy"))
 logits_audio  = torch.tensor(np.load(f"{data}/logits_audio.npy"))
@@ -23,7 +23,7 @@ for mode in fusion_modes:
     print(f"\n=== Testing fusion mode: {mode} ===")
 
     model = FusionAV(
-        num_classes=6,
+        num_classes=6, 
         fusion_mode=mode,
         alpha=0.5,                         # used only for avg.
         use_pre_softmax=(mode in {"mlp", "gate"}),

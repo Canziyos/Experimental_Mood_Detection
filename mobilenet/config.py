@@ -42,3 +42,11 @@ class Config:
     @property
     def y_aud_path(self) -> Path:
         return self.data_dir / "y_logmel.npy"
+
+    @property
+    def x_img_path(self) -> Path:
+        return self.data_dir / "X_img.npy"
+    
+    @property
+    def y_img_path(self) -> Path:
+        return self.data_dir / "y_img.npy"
