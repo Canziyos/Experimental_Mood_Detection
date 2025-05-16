@@ -5,7 +5,7 @@ from sklearn.utils.class_weight import compute_class_weight
 from tqdm import tqdm
 import torch.nn as nn, torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from config import Config
+from mobilenet.config import Config
 
 
 def train(model: nn.Module, loaders: Dict[str, torch.utils.data.DataLoader], cfg: Config):
@@ -22,7 +22,7 @@ def train(model: nn.Module, loaders: Dict[str, torch.utils.data.DataLoader], cfg
     scheduler = StepLR(optimizer, step_size=cfg.step_size, gamma=cfg.gamma)
 
     best, hist = 0.0, defaultdict(list)
-    ckpt = cfg.checkpoint_dir / f"mobilenet_{cfg.img_mode}.pth"
+    ckpt = cfg.checkpoint_dir / f"mobilenet_img.pth"
     ckpt.parent.mkdir(exist_ok=True)
 
     for epoch in range(cfg.num_epochs):

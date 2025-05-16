@@ -3,13 +3,12 @@ import torch
 from torch.utils.data import Dataset, DataLoader, Subset
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from config import Config
+from mobilenet.config import Config
 
 
 class ImageDataset(Dataset):
     """
-    Lazily opens X_img.npy / y_img.npy inside *each* worker.
-    Nothing huge is pickled during DataLoader-spawn.
+    opens X_img.npy / y_img.npy inside each worker.
     """
 
     def __init__(self, x_path: Path, y_path: Path):
@@ -43,7 +42,7 @@ class ImageDataset(Dataset):
 
 # ================================================================= #
 def make_image_loaders(cfg: Config):
-    print(f"Loading image data from: {cfg.x_img_path.name}, mode: {cfg.img_mode}")
+    print(f"Loading image data from: {cfg.x_img_path.name}")
 
     full_ds = ImageDataset(cfg.x_img_path, cfg.y_img_path)
     idxs = np.arange(len(full_ds))
