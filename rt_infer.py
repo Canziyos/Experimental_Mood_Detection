@@ -13,7 +13,7 @@ from pathlib import Path
 from insightface.app import FaceAnalysis
 
 from models.mobilenet_v2_embed import MobileNetV2Encap
-from models.mobilenet_v2_audio import MobileNetV2Audio      # MobileNetV2Encap with in_ch=1
+from models.mobilenet import MobileNetV2Audio      # MobileNetV2Encap with in_ch=1
 from models.FusionAV import FusionAV
 from config import Config
 

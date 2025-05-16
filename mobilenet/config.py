@@ -1,7 +1,8 @@
+from pathlib import Path
+from dataclasses import dataclass, field
+
 @dataclass
 class Config:
-    aud_mode: str = "augmented"
-    img_mode: str = "img"
     num_workers: int = 2
 
     test_size: float = 0.07
@@ -28,26 +29,16 @@ class Config:
     audio_dir: Path = field(init=False)
 
     def __post_init__(self):
-        self.project_root = Path(__file__).resolve().parent
+        self.project_root = Path(__file__).resolve().parents[1]
         self.data_dir = self.project_root / "processed_data"
         self.checkpoint_dir = self.project_root / "checkpoints"
         self.image_dir = self.project_root / "dataset" / "Images"
         self.audio_dir = self.project_root / "dataset" / "Audio"
 
     @property
-    def x_img_path(self) -> Path:
-        return self.data_dir / f"X_{self.img_mode}.npy"
-
-    @property
-    def y_img_path(self) -> Path:
-        return self.data_dir / f"y_{self.img_mode}.npy"
-
-    @property
     def x_aud_path(self) -> Path:
-        suffix = "aug" if self.aud_mode == "augmented" else "aud"
-        return self.data_dir / f"X_{suffix}.npy"
+        return self.data_dir / "X_logmel.npy"
 
     @property
     def y_aud_path(self) -> Path:
-        suffix = "aug" if self.aud_mode == "augmented" else "aud"
-        return self.data_dir / f"y_{suffix}.npy"
+        return self.data_dir / "y_logmel.npy"
