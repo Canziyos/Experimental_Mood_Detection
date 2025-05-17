@@ -1,15 +1,21 @@
-"""CLI to train the log‑mel MobileNetV2 audio model."""
-import argparse, torch
-from config import Config
-from models.mobilenet_v2_audio import MobileNetV2Audio
-from dataset.audio_loader import make_audio_loaders
-from train.aud_trainer import train
+import sys
+import os
+sys.path.insert(0, os.path.abspath('.'))
+from mobilenet.audio.audio_loader import make_audio_loaders
+from mobilenet.audio.audio_model import AudioMobileNetV2
+from mobilenet.audio.aud_trainer import train
+import torch
 
-p = argparse.ArgumentParser(); p.add_argument("--mode", choices=["clean","augmented"], default="augmented")
-args = p.parse_args()
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-cfg = Config(aud_mode=args.mode)
-loaders = make_audio_loaders(cfg)
-model = MobileNetV2Audio()
-print(f"[INFO] lr={cfg.lr}, epochs={cfg.num_epochs}")
-train(model, loaders, cfg)
+    print("Loading data...")
+    loaders = make_audio_loaders()
+
+    print("Building model...")
+    model = AudioMobileNetV2(pretrained=False, freeze_backbone=False).to(device)
+
+    print("Training...")
+    trained_model, history = train(model, loaders)
+
+    print("Training complete. Best model loaded.")

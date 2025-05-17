@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 class Config:
     num_workers: int = 2
 
-    test_size: float = 0.07
+    test_size: float = 0.10
     val_size: float = 0.10
     batch_size: int = 32
     num_epochs: int = 15
