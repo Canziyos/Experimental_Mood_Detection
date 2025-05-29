@@ -3,11 +3,11 @@ import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
 from moviepy.editor import VideoFileClip
-from mobilenet.audio.audio_model import AudioMobileNetV2
+from mobilenet.audio.AudioEmotionCNN1D import AudioMobileNetV2
 from mobilenet.audio.log_mel import LogMelSpec
 from mobilenet.fusion.FusionAV import FusionAV
 
-# --- HARD-CODED SETTINGS ---
+# will be refactored soon.
 video_path = "4.mp4"
 audio_ckpt = "checkpoints/mobilenet_aud.pth"
 fusion_mode = "avg"  # Can be: avg, prod, gate, mlp, latent
@@ -16,7 +16,7 @@ class_names = ["Angry", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# --- MODELS ---
+# Models
 aud_net = AudioMobileNetV2(pretrained=False, freeze_backbone=False).to(device).eval()
 aud_net.load_state_dict(torch.load(audio_ckpt, map_location=device))
 
@@ -30,12 +30,12 @@ fusion = FusionAV(
 
 logmel_model = LogMelSpec(img_size=(96, 192)).to(device)
 
-# --- FAKE IMAGE INPUTS ---
+# fake image embedding and logits
 v_vec = torch.randn((1, 128), device=device)         # Fake image embedding
 v_logits = torch.randn((1, n_classes), device=device)
 v_prob = torch.softmax(v_logits, dim=1)
 
-# --- EXTRACT AUDIO FROM VIDEO ---
+# extract audio features from video.
 clip = VideoFileClip(video_path)
 audio_path = video_path + ".wav"
 clip.audio.write_audiofile(audio_path, fps=16000, verbose=False, logger=None)
@@ -45,7 +45,7 @@ if wav_np.ndim > 1:
     wav_np = wav_np.mean(axis=1)
 wav_torch = torch.tensor(wav_np, dtype=torch.float32).unsqueeze(0).to(device)
 
-# --- USE FIRST 2 SECONDS OF AUDIO ---
+# prepare audio segment
 samples = sr * 2
 seg = wav_torch[..., :samples]
 if seg.shape[-1] < samples:
@@ -53,13 +53,13 @@ if seg.shape[-1] < samples:
 
 spec = logmel_model(seg).unsqueeze(0)  # (1, 1, 96, 192)
 
-# --- AUDIO MODEL OUTPUTS ---
+# audio inference.
 with torch.inference_mode():
     a_vec = aud_net.extract_features(spec)
     a_logits = aud_net(spec)
     a_prob = torch.softmax(a_logits, dim=1)
 
-# --- FUSION ---
+# fuse outputs.
 with torch.inference_mode():
     fused = fusion.fuse_probs(
         probs_audio=a_prob,
@@ -72,12 +72,12 @@ with torch.inference_mode():
 
 cls = fused.argmax(1).item()
 print("\n=== Fusion Output ===")
-print(f"FUSED class: {class_names[cls]} (index {cls})")
+print(f"Fused class: {class_names[cls]} (index {cls})")
 print(f"Audio probs: {a_prob.cpu().numpy().round(3).tolist()}")
 print(f"Image probs: {v_prob.cpu().numpy().round(3).tolist()}")
 print(f"Fused probs: {fused.cpu().numpy().round(3).tolist()}")
 
-# --- VISUALIZATION ---
+#visualize.
 def visualize_fusion_outputs(a_prob, v_prob, fused, class_names=None):
     a = a_prob.squeeze().cpu().numpy()
     v = v_prob.squeeze().cpu().numpy()
