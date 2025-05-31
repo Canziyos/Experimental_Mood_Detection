@@ -1,40 +1,17 @@
 npys_dir:
-  train_aud_npy: "features"
-  val_aud_npy: ""
-
-
+  features: "features"  # Directory with .npy feature files inside class subfolders
 
 data:
   aud_train_dir: "dataset/audio/train"
-  img_train_dir: "dataset/images/train"
-  #aud_test_dir: "C:/Users/Dator/Downloads/Test_spectrogram_images/test_spectrogram_images_EmoDB"
-  aud_test_dir: "dataset/audio/test"
-  img_test_dir: "dataset/images/test"
   aud_val_dir: "dataset/audio/val"
-  img_val_dir: "dataset/images/val"
+  aud_test_dir: "dataset/audio/test"
 
-
-  #img_train_dir: "C:/Projects/GitHub_projects/Experimental_Mood_Detection/dataset/images/train"
-  #aud_test_dir: "C:/Projects/GitHub_projects/Experimental_Mood_Detection/dataset/audio/train"
-  #img_test_dir: "C:/Users/Dator/Downloads/Weights_and_data_for_test/Weights_and_data_for_test/RAVDESS_for_faceimg_test"
-  #aud_test_dir: "C:/Users/Dator/Downloads/Weights_and_data_for_test/Weights_and_data_for_test/EmoDB_for_specimg_test"
-  #aud_val_dir: "C:/Projects/GitHub_projects/Experimental_Mood_Detection/dataset/audio/val"
-  #img_val_dir: "C:/Projects/GitHub_projects/Experimental_Mood_Detection/dataset/images/val"
-
-
-models:
-  root: "models"
-  #audio_model: "models/mobilenetv2_aud.pth"
-  audio_model: "models/mobilenetv2_aud_TrainedOnFullDataset_71.09.pth"
-  #image_model: "models/mobilenetv2_img.pth"
-  image_model: "models/mobilenetv2_img_TrainedOnFullDataset_70.79.pth"
-  gate: "models/best_gate_normalized_logits.pth"
-  aud_trained_on_crema: "models/mobilenetv2_aud_TrainedOnCREMA_64.84.pth"
-  img_trained_on_crema: "models/mobilenetv2_img_OnlyTrainedOnCREMA_72.53.pth"
+ckpt:
+  root: "checkpoints"
+  audio_model: "checkpoints/audio_emotion_cnn1d.pth"
 
 results:
   root: "results"
-  
 
 classes:
   - Angry
@@ -44,24 +21,22 @@ classes:
   - Neutral
   - Sad
 
-normalization:
-  aud_logits_mean: -2.953
-  aud_logits_std: 5.11
-  img_logits_mean: -0.592
-  img_logits_std: 1.58
+training:
+  batch_size: 32
+  num_workers: 4
+  input_features: 39
+  epochs: 30
+  lr: 0.001
 
-
-current_results:
-  test_subset_combined: "current_results/Results testing on 10% test-subset using Weights trained on Combined dataset"
-  test_subset_cremad: "current_results/Results testing on 10% test-subset using Weights trained on CREMA-D"
-  emodb_ravdess_combined: "current_results/Results testing on EMODB and RAVDESS using Weights trained on Comined dataset"
-  emodb_ravdess_cremad: "current_results/Results testing on EMODB and RAVDESS using Weights trained on CREMA-D"
+preprocessing:
+  
+  sample_rate: 16000
+  n_mfcc: 13
+  win_length: 0.025
+  hop_length: 0.010
 
 demo:
   video_clip: "C:/Users/Dator/Pictures/Camera Roll/1.mp4"
-  #video_clip: "experiments/test_samples/4.mp4"
-  csv_out: "results/clip_fusion.csv"
-  fusion_type: "avg"
-  alpha : 0.5
+  csv_out: "results/output.csv"
   frames: 10
   audio_window: 1.0

@@ -201,7 +201,5 @@ data/Audio/
 logs/
 debug_outputs/
 
-# mobilenet/image/
-# mobilenet/audio/
 
 
