@@ -1,42 +1,125 @@
-npys_dir:
-  features: "features"  # Directory with .npy feature files inside class subfolders
+ckpt:
+  root: checkpoints
+  #audio_model: checkpoints/audio_emotion_cnn1d.pth
+  audio_model: checkpoints/audio_clean_cnn1d.pth
+  
+classes:
+- Angry
+- Disgust
+- Fear
+- Happy
+- Neutral
+- Sad
 
 data:
-  aud_train_dir: "dataset/audio/train"
-  aud_val_dir: "dataset/audio/val"
-  aud_test_dir: "dataset/audio/test"
+  aud_test_dir: dataset/audio/test
+  aud_train_dir: dataset/audio/train
+  aud_val_dir: dataset/audio/val
 
-ckpt:
-  root: "checkpoints"
-  audio_model: "checkpoints/audio_emotion_cnn1d.pth"
+demo:
+  audio_window: 1.0
+  csv_out: results/output.csv
+  frames: 10
+  video_clip: C:/Users/Dator/Pictures/Camera Roll/1.mp4
+
+npys_dir:
+  root: features
+  npy_test: features/test
+  npy_train: features/train
+  npy_val: features/val
+
+preprocessing:
+  global_mean:
+  - -17.8327
+  - -16.428
+  - -13.6392
+  - -10.152
+  - -11.9189
+  - -13.3105
+  - -14.8144
+  - -15.4425
+  - -16.7453
+  - -18.9088
+  - -21.2936
+  - -23.2728
+  - -25.2902
+  - -26.4992
+  - -27.0809
+  - -27.9122
+  - -28.1242
+  - -28.2729
+  - -28.5653
+  - -29.1044
+  - -29.7509
+  - -30.2921
+  - -30.2203
+  - -30.1726
+  - -30.3936
+  - -30.6731
+  - -30.8675
+  - -30.7949
+  - -30.9938
+  - -31.8533
+  - -32.3566
+  - -32.8393
+  - -33.5896
+  - -33.6424
+  - -33.2973
+  - -33.2867
+  - -33.3495
+  - -33.8355
+  - -34.9079
+  global_std:
+  - 16.7046
+  - 17.3488
+  - 18.7285
+  - 19.8128
+  - 20.1382
+  - 20.3605
+  - 20.7794
+  - 21.1202
+  - 21.3502
+  - 21.1989
+  - 20.7481
+  - 20.3321
+  - 19.8013
+  - 19.4971
+  - 19.3548
+  - 19.1048
+  - 18.9732
+  - 18.8206
+  - 18.732
+  - 18.4233
+  - 18.1594
+  - 18.0028
+  - 18.162
+  - 18.3773
+  - 18.3207
+  - 18.0483
+  - 17.8879
+  - 17.8647
+  - 17.6301
+  - 17.0316
+  - 16.6313
+  - 16.3379
+  - 15.9591
+  - 15.9439
+  - 16.1005
+  - 16.0817
+  - 16.1442
+  - 16.1301
+  - 16.0089
+  hop_length: 0.01
+  n_mfcc: 13
+  sample_rate: 16000
+  win_length: 0.025
 
 results:
-  root: "results"
-
-classes:
-  - Angry
-  - Disgust
-  - Fear
-  - Happy
-  - Neutral
-  - Sad
+  root: results
 
 training:
   batch_size: 32
-  num_workers: 4
+  epochs: 50
   input_features: 39
-  epochs: 30
   lr: 0.001
-
-preprocessing:
-  
-  sample_rate: 16000
-  n_mfcc: 13
-  win_length: 0.025
-  hop_length: 0.010
-
-demo:
-  video_clip: "C:/Users/Dator/Pictures/Camera Roll/1.mp4"
-  csv_out: "results/output.csv"
-  frames: 10
-  audio_window: 1.0
+  num_workers: 4
