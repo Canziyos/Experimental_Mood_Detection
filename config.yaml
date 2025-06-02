@@ -119,7 +119,7 @@ results:
 
 training:
   batch_size: 32
-  epochs: 50
+  epochs: 150
   input_features: 39
   lr: 0.001
   num_workers: 4
