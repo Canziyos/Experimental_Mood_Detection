@@ -29,13 +29,14 @@ epochs = config["training"]["epochs"]
 lr = config["training"]["lr"]
 input_features = config["training"]["input_features"]
 num_classes = len(config["classes"])
-features_dir = config["npys_dir"]["features"]
+features_dir = config["npys_dir"]["root"]
 
 # 3. Collect Clean Files Only.
-all_files = [
-    f for f in glob.glob(os.path.join(features_dir, "train", "*", "*.npy"))
-    if not any(suffix in os.path.basename(f) for suffix in ["_pitch", "_noise"])
-]
+all_files = glob.glob(os.path.join(features_dir, "train", "*", "*.npy"))
+# all_files = [
+#     f for f in glob.glob(os.path.join(features_dir, "train", "*", "*.npy"))
+#     if not any(suffix in os.path.basename(f) for suffix in ["_pitch", "_noise"])
+# ]
 
 label_names = sorted({os.path.basename(os.path.dirname(f)) for f in all_files})
 label_to_idx = {name: idx for idx, name in enumerate(label_names)}
@@ -43,16 +44,16 @@ label_dict = {f: label_to_idx[os.path.basename(os.path.dirname(f))] for f in all
 labels = [label_dict[f] for f in all_files]
 
 # 4. Stratified Split.
-train_files, val_files, _, _ = train_test_split(
+train_f, val_f, _, _ = train_test_split(
     all_files, labels, test_size=0.2, stratify=labels, random_state=seed
 )
 
-print("Train class distribution:", Counter([label_dict[f] for f in train_files]))
-print("Val class distribution:", Counter([label_dict[f] for f in val_files]))
+print("Train class distribution:", Counter([label_dict[f] for f in train_f]))
+print("Val class distribution:", Counter([label_dict[f] for f in val_f]))
 
 # 5. Dataset and Dataloaders.
-train_dataset = FeatureDataset(label_dict, train_files)
-val_dataset = FeatureDataset(label_dict, val_files)
+train_dataset = FeatureDataset(label_dict, train_f, augment=True)
+val_dataset = FeatureDataset(label_dict, val_f, augment=False)
 
 train_loader = DataLoader(train_dataset, batch_size=batch_s, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_s)
@@ -68,8 +69,9 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', fa
 best_val_loss = float("inf")
 patience = 5
 patience_counter = 0
-ckpt_path = config["ckpt"]["audio_model"]
-os.makedirs(config["ckpt"]["root"], exist_ok=True)
+ckpt_path = config["ckpt"]["cnn1d"]
+os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+
 
 # 8. Training Loop.
 for epoch in range(epochs):

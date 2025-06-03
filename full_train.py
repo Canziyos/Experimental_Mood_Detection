@@ -26,7 +26,7 @@ epochs = cfg["training"]["epochs"]
 lr = cfg["training"]["lr"]
 input_features = cfg["training"]["input_features"]
 num_classes = len(cfg["classes"])
-features_dir = cfg["npys_dir"]["features"]
+features_dir = cfg["npys_dir"]["root"]
 
 # 3. collect all files.
 all_files = glob.glob(os.path.join(features_dir, "train", "*", "*.npy"))
@@ -60,9 +60,9 @@ scheduler  = torch.optim.lr_scheduler.ReduceLROnPlateau(
 
 # 7. early-stopping setup.
 best_val_loss = float('inf')
-patience = 5
+patience = 8
 patience_ctr = 0
-ckpt_path = cfg["ckpt"]["audio_model"]
+ckpt_path = cfg["ckpt"]["cnn1d"]
 os.makedirs(cfg["ckpt"]["root"], exist_ok=True)
 
 # 8. training loop .

@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     config.setdefault("preprocessing", {})
 
-    train_dir = os.path.join(config["npys_dir"]["features"], "train")
+    train_dir = os.path.join(config["npys_dir"]["root"], "train")
     mean, std = compute_mel_mean_std(train_dir, num_mels=39)
 
     config["preprocessing"]["global_mean"] = [round(float(m), 4) for m in mean.tolist()]
