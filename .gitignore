@@ -199,8 +199,9 @@ cython_debug/
 *.mkv
 *.ogg
 *.npy
-data/Images/
-#data/Audio/
+dataset/audio/
+dataset/animals/
+
 # Ignore logs
 *.log
 logs/
